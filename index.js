@@ -12,8 +12,6 @@ const {
   StringSelectMenuBuilder
 } = require('discord.js');
 
-const pool = require('./db');
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -28,14 +26,14 @@ const GAMERS_ROLE_ID = "1474625885062697161";
 const TICKET_CATEGORY_NAME = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
 const CLOSED_CATEGORY_NAME = "𝐂𝐋𝐎𝐒𝐄𝐃";
 
-let orderCounter = 3000;
+let orderCounter = 3600;
 let orders = {};
 
 client.once('ready', () => {
   console.log("BOOSTFIY Ready 👑");
 });
 
-// ================= MESSAGE =================
+// ======================= MESSAGE =======================
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
@@ -60,27 +58,42 @@ client.on('messageCreate', async (message) => {
       service,
       price,
       code,
-      client: message.author.id
+      client: message.author.id,
+      seller: null,
+      messageId: null
     };
 
     const embed = new EmbedBuilder()
-      .setColor("Gold")
-      .setTitle(`📦 Order #${orderCounter}`)
+      .setColor("#2b2d31")
+      .setTitle("📢 New Order")
       .setDescription(`
-Item: **${service}**
-Price: **${price}**
-Code: **${code}**
-Status: Pending
-`);
+🔸 **Details:** ${service}
+💰 **Price:** ${price}
+🔑 **Code:** ${code}
+
+🔹 **Order:** #${orderCounter}
+🔹 **Seller:** None
+`)
+      .setImage("https://cdn.discordapp.com/attachments/963969901729546270/1474623270740561930/Yellow_Neon_Gaming_YouTube_Banner.png");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`collect_${orderCounter}`)
         .setLabel("Collect")
-        .setStyle(ButtonStyle.Success)
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`manage_${orderCounter}`)
+        .setLabel("Manage")
+        .setStyle(ButtonStyle.Secondary)
     );
 
-    message.channel.send({ embeds: [embed], components: [row] });
+    const msg = await message.channel.send({
+      content: `<@&${GAMERS_ROLE_ID}>`,
+      embeds: [embed],
+      components: [row]
+    });
+
+    orders[orderCounter].messageId = msg.id;
   }
 
   // ===== !store =====
@@ -100,7 +113,7 @@ Status: Pending
   }
 });
 
-// ================= INTERACTIONS =================
+// ======================= INTERACTIONS =======================
 
 client.on('interactionCreate', async (interaction) => {
 
@@ -134,7 +147,7 @@ client.on('interactionCreate', async (interaction) => {
         const arkMenu = new ActionRowBuilder().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId("select_ark")
-            .setPlaceholder("Choose ARK Category")
+            .setPlaceholder("Choose Category")
             .addOptions([
               { label: "Items", value: "items" },
               { label: "Weapons", value: "weapons" }
@@ -163,12 +176,14 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  // ===== ORDER COLLECT =====
+  // ===== COLLECT =====
   if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
 
     const id = interaction.customId.split("_")[1];
     const data = orders[id];
     if (!data) return;
+
+    data.seller = interaction.user.id;
 
     const category = interaction.guild.channels.cache.find(
       c => c.name === TICKET_CATEGORY_NAME
@@ -196,11 +211,11 @@ client.on('interactionCreate', async (interaction) => {
 🎟️ Order #${id}
 
 👤 Client: <@${data.client}>
-🛒 Seller: <@${interaction.user.id}>
+🛒 Seller: <@${data.seller}>
 
-Item: ${data.service}
-Price: ${data.price}
-Code: ${data.code}
+📦 ${data.service}
+💰 ${data.price}
+🔑 ${data.code}
 `,
       components: [closeRow]
     });
@@ -223,9 +238,6 @@ Code: ${data.code}
 
 });
 
-
-// ================= SHOP TICKET FUNCTION =================
-
 async function createShopTicket(interaction, service, price) {
 
   orderCounter++;
@@ -243,13 +255,23 @@ async function createShopTicket(interaction, service, price) {
     ]
   });
 
-  await ticket.send(`
+  const closeRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`close_${orderCounter}`)
+      .setLabel("Close Ticket")
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  await ticket.send({
+    content: `
 🛍️ Shop Order
 
 👤 Client: <@${interaction.user.id}>
-Item: ${service}
-Price: ${price}
-`);
+📦 ${service}
+💰 ${price}
+`,
+    components: [closeRow]
+  });
 
   await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
 }
