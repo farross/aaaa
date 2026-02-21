@@ -20,6 +20,7 @@ const client = new Client({
 });
 
 const STORE_NAME = "BOOSTFIY";
+const OWNER_ROLE_NAME = "ᴼᵂᴺᴱᴿ"; // 👈 الرول اللي تقدر تعمل اوردر
 const GAMERS_ROLE_ID = "1474625885062697161";
 const TICKET_CATEGORY_NAME = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
 const CLOSED_CATEGORY_NAME = "𝐂𝐋𝐎𝐒𝐄𝐃";
@@ -40,6 +41,11 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
   if (message.content.startsWith("!order")) {
+
+    // 🔥 السماح لرول OWNER فقط
+    if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME)) {
+      return message.reply("❌ انت مش معاك صلاحية استخدام الأمر ده.");
+    }
 
     const details = message.content.slice(7).trim();
     if (!details) return message.reply("اكتب تفاصيل الأوردر بعد !order");
@@ -66,6 +72,7 @@ client.on('messageCreate', async (message) => {
 
 🔹 **Order:** #${orderCounter}
 🔹 **Seller:** None
+🔹 **Status:** Pending
 
 ━━━━━━━━━━━━━━━━━━`
       );
@@ -78,7 +85,6 @@ client.on('messageCreate', async (message) => {
     );
 
     const msg = await message.channel.send({ embeds: [embed], components: [row] });
-
     orders[orderCounter].messageId = msg.id;
   }
 });
@@ -97,9 +103,11 @@ client.on('interactionCreate', async (interaction) => {
   // ===== COLLECT =====
   if (action === "collect") {
 
-    await interaction.deferUpdate();
+    if (order.collected) {
+      return interaction.reply({ content: "⚠️ الأوردر متجمع بالفعل.", ephemeral: true });
+    }
 
-    if (order.collected) return;
+    await interaction.deferUpdate();
 
     order.collected = true;
     order.seller = interaction.user.id;
@@ -112,7 +120,7 @@ client.on('interactionCreate', async (interaction) => {
 
 ━━━━━━━━━━━━━━━━━━
 
-🔸 ~~Details: ${order.details}~~
+🔸 ~~${order.details}~~
 
 🔹 **Order:** #${orderId}
 🔹 **Seller:** <@${interaction.user.id}>
@@ -130,27 +138,15 @@ client.on('interactionCreate', async (interaction) => {
 
     await originalMessage.edit({ embeds: [updatedEmbed], components: [row] });
 
-    // فتح تيكت
-    const category = interaction.guild.channels.cache.find(
-      c => c.name === TICKET_CATEGORY_NAME
-    );
+    const category = interaction.guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
 
     const channel = await interaction.guild.channels.create({
       name: `ticket-${orderId}`,
       parent: category.id,
       permissionOverwrites: [
-        {
-          id: interaction.guild.id,
-          deny: [PermissionsBitField.Flags.ViewChannel],
-        },
-        {
-          id: order.userId,
-          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-        },
-        {
-          id: interaction.user.id,
-          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-        }
+        { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+        { id: order.userId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+        { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
       ]
     });
 
@@ -178,6 +174,10 @@ client.on('interactionCreate', async (interaction) => {
   // ===== DELIVERED =====
   if (action === "delivered") {
 
+    if (order.delivered) {
+      return interaction.reply({ content: "⚠️ الأوردر متعلم Delivered بالفعل.", ephemeral: true });
+    }
+
     await interaction.deferUpdate();
 
     order.delivered = true;
@@ -190,7 +190,7 @@ client.on('interactionCreate', async (interaction) => {
 
 ━━━━━━━━━━━━━━━━━━
 
-🔸 ~~Details: ${order.details}~~
+🔸 ~~${order.details}~~
 
 🔹 **Order:** #${orderId}
 🔹 **Seller:** <@${order.seller}>
@@ -199,6 +199,7 @@ client.on('interactionCreate', async (interaction) => {
 ━━━━━━━━━━━━━━━━━━`
       );
 
+    // ❌ إزالة كل الأزرار نهائيًا
     await originalMessage.edit({ embeds: [updatedEmbed], components: [] });
   }
 
@@ -208,9 +209,7 @@ client.on('interactionCreate', async (interaction) => {
 
     await interaction.deferReply({ ephemeral: true });
 
-    const closedCategory = interaction.guild.channels.cache.find(
-      c => c.name === CLOSED_CATEGORY_NAME
-    );
+    const closedCategory = interaction.guild.channels.cache.find(c => c.name === CLOSED_CATEGORY_NAME);
 
     if (!closedCategory) {
       return interaction.editReply("❌ اعمل كاتيجوري باسم 𝐂𝐋𝐎𝐒𝐄𝐃");
