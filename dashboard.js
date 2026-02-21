@@ -10,7 +10,7 @@ app.get("/", async (req, res) => {
 
   let rows = result.rows.map(o => `
     <tr>
-      <td>${o.id}</td>
+      <td>${o.order_number}</td>
       <td>${o.user_id}</td>
       <td>${o.seller_id}</td>
       <td>${o.service}</td>
@@ -22,22 +22,12 @@ app.get("/", async (req, res) => {
 
   res.send(`
     <html>
-    <head>
-      <title>BOOSTFIY Dashboard</title>
-      <style>
-        body { background:#111; color:#fff; font-family:Arial; text-align:center; }
-        table { width:90%; margin:auto; border-collapse:collapse; }
-        th, td { padding:10px; border:1px solid #444; }
-        th { background:#FFD700; color:#000; }
-        tr:nth-child(even){ background:#222; }
-      </style>
-    </head>
-    <body>
+    <body style="background:#111;color:white;font-family:Arial;text-align:center;">
       <h1>BOOSTFIY Dashboard 👑</h1>
       <h2>Total Profit: $${total.rows[0].total || 0}</h2>
-      <table>
+      <table border="1" style="margin:auto;width:90%;">
         <tr>
-          <th>ID</th>
+          <th>Order</th>
           <th>Client</th>
           <th>Seller</th>
           <th>Service</th>
@@ -53,4 +43,4 @@ app.get("/", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Dashboard Running"));
+app.listen(PORT);
