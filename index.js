@@ -1,3 +1,6 @@
+require('./db');
+require('./dashboard');
+
 const {
   Client,
   GatewayIntentBits,
@@ -5,9 +8,11 @@ const {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
-  StringSelectMenuBuilder,
-  PermissionsBitField
+  PermissionsBitField,
+  StringSelectMenuBuilder
 } = require('discord.js');
+
+const pool = require('./db');
 
 const client = new Client({
   intents: [
@@ -18,18 +23,19 @@ const client = new Client({
   ]
 });
 
-const TICKET_CATEGORY = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
-const CLOSED_CATEGORY = "𝐂𝐋𝐎𝐒𝐄𝐃";
+const OWNER_ROLE_NAME = "ᴼᵂᴺᴱᴿ";
+const GAMERS_ROLE_ID = "1474625885062697161";
+const TICKET_CATEGORY_NAME = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
+const CLOSED_CATEGORY_NAME = "𝐂𝐋𝐎𝐒𝐄𝐃";
 
-let orderCounter = 1000;
+let orderCounter = 3000;
 let orders = {};
 
 client.once('ready', () => {
-  console.log("BOOSTFIY SYSTEM READY 👑");
+  console.log("BOOSTFIY Ready 👑");
 });
 
-
-// ======================= ORDER SYSTEM =======================
+// ================= MESSAGE =================
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
@@ -37,18 +43,21 @@ client.on('messageCreate', async (message) => {
   // ===== !order =====
   if (message.content.startsWith("!order")) {
 
+    if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
+      return message.reply("❌ انت مش معاك صلاحية.");
+
     const args = message.content.slice(7).split("|");
     if (args.length < 3)
-      return message.reply("استخدم:\n!order name | price$ | code");
+      return message.reply("❌ استخدم:\n!order name | price$ | code");
 
-    const product = args[0].trim();
+    const service = args[0].trim();
     const price = args[1].trim();
     const code = args[2].trim();
 
     orderCounter++;
 
     orders[orderCounter] = {
-      product,
+      service,
       price,
       code,
       client: message.author.id
@@ -56,11 +65,12 @@ client.on('messageCreate', async (message) => {
 
     const embed = new EmbedBuilder()
       .setColor("Gold")
-      .setTitle(`🛒 Order #${orderCounter}`)
+      .setTitle(`📦 Order #${orderCounter}`)
       .setDescription(`
-📦 Product: **${product}**
-💰 Price: **${price}**
-🔑 Code: **${code}**
+Item: **${service}**
+Price: **${price}**
+Code: **${code}**
+Status: Pending
 `);
 
     const row = new ActionRowBuilder().addComponents(
@@ -73,76 +83,124 @@ client.on('messageCreate', async (message) => {
     message.channel.send({ embeds: [embed], components: [row] });
   }
 
-
-  // ===== !shop =====
-  if (message.content === "!shop") {
+  // ===== !store =====
+  if (message.content === "!store") {
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId("buy_menu")
-        .setLabel("Buy")
-        .setStyle(ButtonStyle.Primary)
+        .setCustomId("buy_start")
+        .setLabel("🛒 Buy")
+        .setStyle(ButtonStyle.Success)
     );
 
     message.channel.send({
-      content: "🛍️ Welcome To BOOSTFIY Shop",
+      content: "## BOOSTFIY STORE 👑",
       components: [row]
     });
   }
 });
 
-
-// ======================= INTERACTIONS =======================
+// ================= INTERACTIONS =================
 
 client.on('interactionCreate', async (interaction) => {
+
+  // ===== BUY BUTTON =====
+  if (interaction.isButton() && interaction.customId === "buy_start") {
+
+    const menu = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("select_game")
+        .setPlaceholder("Choose Game")
+        .addOptions([
+          { label: "WoW", value: "wow" },
+          { label: "ARK Raiders", value: "ark" }
+        ])
+    );
+
+    return interaction.reply({
+      content: "Select Game:",
+      components: [menu],
+      ephemeral: true
+    });
+  }
+
+  // ===== GAME SELECT =====
+  if (interaction.isStringSelectMenu()) {
+
+    if (interaction.customId === "select_game") {
+
+      if (interaction.values[0] === "ark") {
+
+        const arkMenu = new ActionRowBuilder().addComponents(
+          new StringSelectMenuBuilder()
+            .setCustomId("select_ark")
+            .setPlaceholder("Choose ARK Category")
+            .addOptions([
+              { label: "Items", value: "items" },
+              { label: "Weapons", value: "weapons" }
+            ])
+        );
+
+        return interaction.update({
+          content: "Choose ARK Category:",
+          components: [arkMenu]
+        });
+      }
+
+      if (interaction.values[0] === "wow") {
+        return createShopTicket(interaction, "WoW Service", "20$");
+      }
+    }
+
+    if (interaction.customId === "select_ark") {
+
+      const type = interaction.values[0];
+      const name = type === "items"
+        ? "ARK Raiders Items"
+        : "ARK Raiders Weapons";
+
+      return createShopTicket(interaction, name, "15$");
+    }
+  }
 
   // ===== ORDER COLLECT =====
   if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
 
-    const orderId = interaction.customId.split("_")[1];
-    const data = orders[orderId];
+    const id = interaction.customId.split("_")[1];
+    const data = orders[id];
     if (!data) return;
 
     const category = interaction.guild.channels.cache.find(
-      c => c.name === TICKET_CATEGORY
+      c => c.name === TICKET_CATEGORY_NAME
     );
 
     const ticket = await interaction.guild.channels.create({
-      name: `ticket-${orderId}`,
+      name: `ticket-${id}`,
       parent: category.id,
       permissionOverwrites: [
-        {
-          id: interaction.guild.id,
-          deny: [PermissionsBitField.Flags.ViewChannel],
-        },
-        {
-          id: data.client,
-          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-        },
-        {
-          id: interaction.user.id,
-          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-        }
+        { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+        { id: data.client, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+        { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
       ]
     });
 
     const closeRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`close_${orderId}`)
+        .setCustomId(`close_${id}`)
         .setLabel("Close Ticket")
         .setStyle(ButtonStyle.Danger)
     );
 
     await ticket.send({
       content: `
-🎟️ Order #${orderId}
+🎟️ Order #${id}
 
 👤 Client: <@${data.client}>
 🛒 Seller: <@${interaction.user.id}>
 
-📦 Product: ${data.product}
-💰 Price: ${data.price}
-🔑 Code: ${data.code}
+Item: ${data.service}
+Price: ${data.price}
+Code: ${data.code}
 `,
       components: [closeRow]
     });
@@ -150,12 +208,11 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
   }
 
-
-  // ===== CLOSE TICKET =====
+  // ===== CLOSE =====
   if (interaction.isButton() && interaction.customId.startsWith("close_")) {
 
     const closedCategory = interaction.guild.channels.cache.find(
-      c => c.name === CLOSED_CATEGORY
+      c => c.name === CLOSED_CATEGORY_NAME
     );
 
     await interaction.channel.setParent(closedCategory.id);
@@ -164,78 +221,25 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.reply({ content: "✅ Ticket Closed", ephemeral: true });
   }
 
-
-  // ===== SHOP BUY BUTTON =====
-  if (interaction.isButton() && interaction.customId === "buy_menu") {
-
-    const select = new StringSelectMenuBuilder()
-      .setCustomId("game_select")
-      .setPlaceholder("Choose Game")
-      .addOptions([
-        { label: "Ark Raiders", value: "ark" },
-        { label: "World of Warcraft", value: "wow" }
-      ]);
-
-    const row = new ActionRowBuilder().addComponents(select);
-
-    await interaction.reply({ content: "Select Game:", components: [row], ephemeral: true });
-  }
-
-
-  // ===== GAME SELECT =====
-  if (interaction.isStringSelectMenu() && interaction.customId === "game_select") {
-
-    if (interaction.values[0] === "ark") {
-
-      const select = new StringSelectMenuBuilder()
-        .setCustomId("ark_type")
-        .setPlaceholder("Choose Type")
-        .addOptions([
-          { label: "Items", value: "items" },
-          { label: "Weapons", value: "weapons" }
-        ]);
-
-      const row = new ActionRowBuilder().addComponents(select);
-
-      return interaction.update({ content: "Select Category:", components: [row] });
-    }
-
-    if (interaction.values[0] === "wow") {
-      return createShopTicket(interaction, "World of Warcraft");
-    }
-  }
-
-
-  // ===== ARK CATEGORY =====
-  if (interaction.isStringSelectMenu() && interaction.customId === "ark_type") {
-
-    const type = interaction.values[0];
-    createShopTicket(interaction, `Ark Raiders - ${type}`);
-  }
-
 });
 
 
-// ======================= CREATE SHOP TICKET =======================
+// ================= SHOP TICKET FUNCTION =================
 
-async function createShopTicket(interaction, productName) {
+async function createShopTicket(interaction, service, price) {
+
+  orderCounter++;
 
   const category = interaction.guild.channels.cache.find(
-    c => c.name === TICKET_CATEGORY
+    c => c.name === TICKET_CATEGORY_NAME
   );
 
   const ticket = await interaction.guild.channels.create({
-    name: `shop-${interaction.user.username}`,
+    name: `ticket-${orderCounter}`,
     parent: category.id,
     permissionOverwrites: [
-      {
-        id: interaction.guild.id,
-        deny: [PermissionsBitField.Flags.ViewChannel],
-      },
-      {
-        id: interaction.user.id,
-        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-      }
+      { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+      { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
     ]
   });
 
@@ -243,7 +247,8 @@ async function createShopTicket(interaction, productName) {
 🛍️ Shop Order
 
 👤 Client: <@${interaction.user.id}>
-🎮 Selected: ${productName}
+Item: ${service}
+Price: ${price}
 `);
 
   await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
