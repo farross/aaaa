@@ -97,7 +97,7 @@ client.on('messageCreate', async (message) => {
     orders[orderCounter].messageId = msg.id;
   }
 
-  // ===== STORE COMMAND =====
+  // ===== STORE =====
   if (message.content === "!store") {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
@@ -121,7 +121,6 @@ client.on('messageCreate', async (message) => {
 
 client.on('interactionCreate', async (interaction) => {
 
-  // ===== SHOP SELECT =====
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === "select_game") {
@@ -159,7 +158,6 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  // ===== BUTTONS =====
   if (!interaction.isButton()) return;
 
   if (interaction.customId === "start_buy") {
@@ -197,7 +195,6 @@ client.on('interactionCreate', async (interaction) => {
     order.collected = true;
     order.seller = interaction.user.id;
 
-    // يفتح تيكت بس لو جاي من !order
     if (!order.fromShop) {
       await openTicket(interaction.guild, orderId, order, interaction.user.id);
     }
@@ -247,7 +244,7 @@ Item: ${order.service}
 Price: $${order.price}
 
 Seller: <@${order.seller}>
-Status: Delivered ✅`
+Status: ~~Collected~~ → Delivered ✅`
       );
 
     await msg.edit({ embeds: [updated], components: [] });
@@ -319,7 +316,7 @@ async function openTicket(guild, orderId, order, sellerId) {
   );
 
   await ticket.send({
-    content: `<@&${GAMERS_ROLE_ID}>`,
+    content: `<@${order.userId}> <@&${GAMERS_ROLE_ID}>`,
     embeds: [
       new EmbedBuilder()
         .setColor("#FFD700")
