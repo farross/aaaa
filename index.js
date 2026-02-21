@@ -9,7 +9,8 @@ const {
   ButtonStyle,
   EmbedBuilder,
   PermissionsBitField,
-  StringSelectMenuBuilder
+  StringSelectMenuBuilder,
+  ChannelType
 } = require('discord.js');
 
 const pool = require('./db');
@@ -42,7 +43,6 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // ===== OWNER MANUAL ORDER =====
   if (message.content.startsWith("!order")) {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
@@ -97,7 +97,6 @@ client.on('messageCreate', async (message) => {
     orders[orderCounter].messageId = msg.id;
   }
 
-  // ===== STORE =====
   if (message.content === "!store") {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
@@ -184,11 +183,7 @@ client.on('interactionCreate', async (interaction) => {
   if (!order)
     return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
 
-  // ===== COLLECT =====
   if (action === "collect") {
-
-    if (order.collected)
-      return interaction.reply({ content: "⚠️ متجمع بالفعل.", ephemeral: true });
 
     await interaction.deferUpdate();
 
@@ -222,17 +217,10 @@ Status: Collected`
     await msg.edit({ embeds: [updated], components: [row] });
   }
 
-  // ===== DELIVERED =====
   if (action === "delivered") {
 
     await interaction.deferUpdate();
     order.delivered = true;
-
-    await pool.query(
-      `INSERT INTO orders (order_number, user_id, seller_id, service, price, status)
-       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [orderId, order.userId, order.seller, order.service, order.price, "Delivered"]
-    );
 
     const msg = await interaction.channel.messages.fetch(order.messageId);
 
@@ -250,7 +238,6 @@ Status: ~~Collected~~ → Delivered ✅`
     await msg.edit({ embeds: [updated], components: [] });
   }
 
-  // ===== CLOSE =====
   if (action === "close") {
 
     await interaction.deferReply({ ephemeral: true });
@@ -297,16 +284,31 @@ async function openTicket(guild, orderId, order, sellerId) {
 
   const ticket = await guild.channels.create({
     name: `ticket-${orderId}`,
+    type: ChannelType.GuildText,
     parent: category.id,
     permissionOverwrites: [
-      { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-      { id: order.userId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-      ...(sellerId ? [{
-        id: sellerId,
-        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
-      }] : [])
+      {
+        id: guild.id,
+        deny: [PermissionsBitField.Flags.ViewChannel]
+      },
+      {
+        id: order.userId,
+        allow: [
+          PermissionsBitField.Flags.ViewChannel,
+          PermissionsBitField.Flags.SendMessages,
+          PermissionsBitField.Flags.ReadMessageHistory
+        ]
+      }
     ]
   });
+
+  if (sellerId) {
+    await ticket.permissionOverwrites.create(sellerId, {
+      ViewChannel: true,
+      SendMessages: true,
+      ReadMessageHistory: true
+    });
+  }
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -316,7 +318,8 @@ async function openTicket(guild, orderId, order, sellerId) {
   );
 
   await ticket.send({
-    content: `<@${order.userId}> <@&${GAMERS_ROLE_ID}>`,
+    content: `<@${order.userId}>`,
+    allowedMentions: { users: [order.userId] },
     embeds: [
       new EmbedBuilder()
         .setColor("#FFD700")
