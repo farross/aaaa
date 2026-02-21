@@ -5,38 +5,24 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+// إنشاء الجداول تلقائياً
 async function initDatabase() {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS orders (
         id SERIAL PRIMARY KEY,
         user_id TEXT,
+        seller_id TEXT,
         service TEXT,
         price INTEGER,
-        cost INTEGER,
-        profit INTEGER,
         status TEXT,
         date TIMESTAMP DEFAULT NOW()
       )
     `);
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        user_id TEXT PRIMARY KEY,
-        total_orders INTEGER DEFAULT 0,
-        total_spent INTEGER DEFAULT 0
-      )
-    `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS blacklist (
-        user_id TEXT PRIMARY KEY
-      )
-    `);
-
-    console.log("🔥 Database Ready (Tables Checked)");
+    console.log("🔥 Database Ready");
   } catch (err) {
-    console.error("❌ Database Error:", err);
+    console.error("DB ERROR:", err);
   }
 }
 
