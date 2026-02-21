@@ -1,80 +1,80 @@
 require('./db');
-const { 
-  Client, 
-  GatewayIntentBits, 
-  ActionRowBuilder, 
-  ButtonBuilder, 
-  ButtonStyle, 
-  EmbedBuilder 
+
+const {
+  Client,
+  GatewayIntentBits,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  PermissionsBitField
 } = require('discord.js');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.GuildMembers
   ]
 });
 
-const STORE_NAME = "BOOSTFIY";
-const STAFF_ROLE_NAME = "Staff";
-const GAMERS_ROLE_ID = "1474625885062697161";
-
-const BANNER_URL = "https://cdn.discordapp.com/attachments/963969901729546270/1474623270740561930/Yellow_Neon_Gaming_YouTube_Banner.png";
-
-let orderCounter = 3000;
-let orders = {};
-
-client.once('clientReady', () => {
-  console.log(`${STORE_NAME} Ready 👑`);
+client.once('ready', () => {
+  console.log('BOOSTFIY FULL SYSTEM Ready 👑');
 });
 
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
+client.on('interactionCreate', async (interaction) => {
 
-  if (message.content.startsWith("!order")) {
+  if (!interaction.isButton()) return;
 
-    const details = message.content.slice(7).trim();
-    if (!details) return message.reply("اكتب تفاصيل الأوردر بعد !order");
+  if (interaction.customId === 'collect') {
 
-    orderCounter++;
+    await interaction.deferReply({ ephemeral: true });
 
-    orders[orderCounter] = {
-      collected: false,
-      seller: null
-    };
+    try {
 
-    const embed = new EmbedBuilder()
-      .setColor("#FFD700")
-      .setImage(BANNER_URL)
-      .setDescription(
-`📢 **New Order** <@&${GAMERS_ROLE_ID}>
-
-━━━━━━━━━━━━━━━━━━
-
-🔸 **Details:** ${details}
-
-🔹 **Order:** #${orderCounter}
-🔹 **Seller:** None
-
-━━━━━━━━━━━━━━━━━━`
-      )
-      .setFooter({ text: `${STORE_NAME} • Premium Gaming Services` });
-
-    const row = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`collect_${orderCounter}`)
-          .setLabel("Collect")
-          .setStyle(ButtonStyle.Success),
-
-        new ButtonBuilder()
-          .setCustomId(`manage_${orderCounter}`)
-          .setLabel("Manage")
-          .setStyle(ButtonStyle.Secondary)
+      const category = interaction.guild.channels.cache.find(
+        c => c.name === "𝐓𝐢𝐜𝐤𝐞𝐭𝐬" && c.type === 4
       );
 
-    message.channel.send({ embeds: [embed], components: [row] });
+      if (!category) {
+        return interaction.editReply("❌ كاتيجوري 𝐓𝐢𝐜𝐤𝐞𝐭𝐬 مش موجودة.");
+      }
+
+      const existing = interaction.guild.channels.cache.find(
+        c => c.name === `ticket-${interaction.user.id}`
+      );
+
+      if (existing) {
+        return interaction.editReply("⚠️ عندك تيكت مفتوحة بالفعل.");
+      }
+
+      const channel = await interaction.guild.channels.create({
+        name: `ticket-${interaction.user.id}`,
+        type: 0,
+        parent: category.id,
+        permissionOverwrites: [
+          {
+            id: interaction.guild.id,
+            deny: [PermissionsBitField.Flags.ViewChannel],
+          },
+          {
+            id: interaction.user.id,
+            allow: [
+              PermissionsBitField.Flags.ViewChannel,
+              PermissionsBitField.Flags.SendMessages
+            ],
+          }
+        ]
+      });
+
+      await channel.send(`🎟️ أهلاً ${interaction.user}  
+اكتب طلبك وهيرد عليك فريق الدعم.`);
+
+      await interaction.editReply(`✅ تم إنشاء التيكت: ${channel}`);
+
+    } catch (err) {
+      console.error(err);
+      await interaction.editReply("❌ حصل خطأ أثناء إنشاء التيكت.");
+    }
   }
 });
 
