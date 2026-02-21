@@ -1,6 +1,3 @@
-require('./db');
-require('./dashboard');
-
 const {
   Client,
   GatewayIntentBits,
@@ -8,10 +5,9 @@ const {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  StringSelectMenuBuilder,
   PermissionsBitField
 } = require('discord.js');
-
-const pool = require('./db');
 
 const client = new Client({
   intents: [
@@ -22,70 +18,50 @@ const client = new Client({
   ]
 });
 
-const STORE_NAME = "BOOSTFIY";
-const OWNER_ROLE_NAME = "ᴼᵂᴺᴱᴿ";
-const GAMERS_ROLE_ID = "1474625885062697161";
-const TICKET_CATEGORY_NAME = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
-const CLOSED_CATEGORY_NAME = "𝐂𝐋𝐎𝐒𝐄𝐃";
+const TICKET_CATEGORY = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
+const CLOSED_CATEGORY = "𝐂𝐋𝐎𝐒𝐄𝐃";
 
-const BANNER_URL = "https://cdn.discordapp.com/attachments/963969901729546270/1474623270740561930/Yellow_Neon_Gaming_YouTube_Banner.png";
-
-let orderCounter = 3000;
+let orderCounter = 1000;
 let orders = {};
 
 client.once('ready', () => {
-  console.log(`${STORE_NAME} Ready 👑`);
+  console.log("BOOSTFIY SYSTEM READY 👑");
 });
 
-// ================= ORDER =================
+
+// ======================= ORDER SYSTEM =======================
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
+  // ===== !order =====
   if (message.content.startsWith("!order")) {
 
-    if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME)) {
-      return message.reply("❌ انت مش معاك صلاحية.");
-    }
-
     const args = message.content.slice(7).split("|");
-    if (args.length < 2) {
-      return message.reply("❌ استخدم:\n!order اسم المنتج | السعر");
-    }
+    if (args.length < 3)
+      return message.reply("استخدم:\n!order name | price$ | code");
 
-    const service = args[0].trim();
-    const price = parseInt(args[1].replace("$","").trim());
-
-    if (isNaN(price)) return message.reply("❌ السعر لازم رقم.");
+    const product = args[0].trim();
+    const price = args[1].trim();
+    const code = args[2].trim();
 
     orderCounter++;
 
     orders[orderCounter] = {
-      collected: false,
-      delivered: false,
-      seller: null,
-      service,
+      product,
       price,
-      userId: message.author.id
+      code,
+      client: message.author.id
     };
 
     const embed = new EmbedBuilder()
-      .setColor("#FFD700")
-      .setImage(BANNER_URL)
-      .setDescription(
-`📢 **New Order** <@&${GAMERS_ROLE_ID}>
-
-━━━━━━━━━━━━━━━━━━
-
-🔸 **Item:** ${service}
-💰 **Price:** $${price}
-
-🔹 **Order:** #${orderCounter}
-🔹 **Seller:** None
-🔹 **Status:** Pending
-
-━━━━━━━━━━━━━━━━━━`
-      );
+      .setColor("Gold")
+      .setTitle(`🛒 Order #${orderCounter}`)
+      .setDescription(`
+📦 Product: **${product}**
+💰 Price: **${price}**
+🔑 Code: **${code}**
+`);
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -94,68 +70,59 @@ client.on('messageCreate', async (message) => {
         .setStyle(ButtonStyle.Success)
     );
 
-    const msg = await message.channel.send({ embeds: [embed], components: [row] });
-    orders[orderCounter].messageId = msg.id;
+    message.channel.send({ embeds: [embed], components: [row] });
   }
-});
 
-// ================= BUTTONS =================
 
-client.on('interactionCreate', async (interaction) => {
-
-  if (!interaction.isButton()) return;
-
-  const [action, orderId] = interaction.customId.split("_");
-  const order = orders[orderId];
-  if (!order) return interaction.reply({ content: "❌ الأوردر مش موجود.", ephemeral: true });
-
-  // ===== COLLECT =====
-  if (action === "collect") {
-
-    if (order.collected)
-      return interaction.reply({ content: "⚠️ متجمع بالفعل.", ephemeral: true });
-
-    await interaction.deferUpdate();
-
-    order.collected = true;
-    order.seller = interaction.user.id;
-
-    const originalMessage = await interaction.channel.messages.fetch(order.messageId);
-
-    const updatedEmbed = new EmbedBuilder(originalMessage.embeds[0])
-      .setDescription(
-`📢 **New Order** <@&${GAMERS_ROLE_ID}>
-
-━━━━━━━━━━━━━━━━━━
-
-🔸 **Item:** ${order.service}
-💰 **Price:** $${order.price}
-
-🔹 **Order:** #${orderId}
-🔹 **Seller:** <@${interaction.user.id}>
-🔹 **Status:** Collected
-
-━━━━━━━━━━━━━━━━━━`
-      );
+  // ===== !shop =====
+  if (message.content === "!shop") {
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`delivered_${orderId}`)
-        .setLabel("Delivered")
+        .setCustomId("buy_menu")
+        .setLabel("Buy")
         .setStyle(ButtonStyle.Primary)
     );
 
-    await originalMessage.edit({ embeds: [updatedEmbed], components: [row] });
+    message.channel.send({
+      content: "🛍️ Welcome To BOOSTFIY Shop",
+      components: [row]
+    });
+  }
+});
 
-    const category = interaction.guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
 
-    const channel = await interaction.guild.channels.create({
+// ======================= INTERACTIONS =======================
+
+client.on('interactionCreate', async (interaction) => {
+
+  // ===== ORDER COLLECT =====
+  if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
+
+    const orderId = interaction.customId.split("_")[1];
+    const data = orders[orderId];
+    if (!data) return;
+
+    const category = interaction.guild.channels.cache.find(
+      c => c.name === TICKET_CATEGORY
+    );
+
+    const ticket = await interaction.guild.channels.create({
       name: `ticket-${orderId}`,
       parent: category.id,
       permissionOverwrites: [
-        { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-        { id: order.userId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-        { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
+        {
+          id: interaction.guild.id,
+          deny: [PermissionsBitField.Flags.ViewChannel],
+        },
+        {
+          id: data.client,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+        },
+        {
+          id: interaction.user.id,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+        }
       ]
     });
 
@@ -166,72 +133,120 @@ client.on('interactionCreate', async (interaction) => {
         .setStyle(ButtonStyle.Danger)
     );
 
-    await channel.send({
-      content:
-`🎟️ **Order #${orderId}**
+    await ticket.send({
+      content: `
+🎟️ Order #${orderId}
 
-📦 Item: ${order.service}
-💰 Price: $${order.price}
+👤 Client: <@${data.client}>
+🛒 Seller: <@${interaction.user.id}>
 
-👤 Client: <@${order.userId}>
-🛒 Seller: <@${interaction.user.id}>`,
+📦 Product: ${data.product}
+💰 Price: ${data.price}
+🔑 Code: ${data.code}
+`,
       components: [closeRow]
     });
+
+    await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
   }
 
-  // ===== DELIVERED =====
-  if (action === "delivered") {
 
-    if (order.delivered)
-      return interaction.reply({ content: "⚠️ متسلم بالفعل.", ephemeral: true });
+  // ===== CLOSE TICKET =====
+  if (interaction.isButton() && interaction.customId.startsWith("close_")) {
 
-    await interaction.deferUpdate();
-
-    order.delivered = true;
-
-    await pool.query(
-      `INSERT INTO orders (order_number, user_id, seller_id, service, price, status)
-       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [orderId, order.userId, order.seller, order.service, order.price, "Delivered"]
+    const closedCategory = interaction.guild.channels.cache.find(
+      c => c.name === CLOSED_CATEGORY
     );
 
-    const originalMessage = await interaction.channel.messages.fetch(order.messageId);
+    await interaction.channel.setParent(closedCategory.id);
+    await interaction.channel.setName(`closed-${interaction.channel.name}`);
 
-    const updatedEmbed = new EmbedBuilder(originalMessage.embeds[0])
-      .setDescription(
-`📢 **New Order** <@&${GAMERS_ROLE_ID}>
-
-━━━━━━━━━━━━━━━━━━
-
-🔸 **Item:** ${order.service}
-💰 **Price:** $${order.price}
-
-🔹 **Order:** #${orderId}
-🔹 **Seller:** <@${order.seller}>
-🔹 **Status:** Delivered ✅
-
-━━━━━━━━━━━━━━━━━━`
-      );
-
-    await originalMessage.edit({ embeds: [updatedEmbed], components: [] });
+    await interaction.reply({ content: "✅ Ticket Closed", ephemeral: true });
   }
 
-  // ===== CLOSE =====
-  if (action === "close") {
 
-    await interaction.deferReply({ ephemeral: true });
+  // ===== SHOP BUY BUTTON =====
+  if (interaction.isButton() && interaction.customId === "buy_menu") {
 
-    const closedCategory = interaction.guild.channels.cache.find(c => c.name === CLOSED_CATEGORY_NAME);
+    const select = new StringSelectMenuBuilder()
+      .setCustomId("game_select")
+      .setPlaceholder("Choose Game")
+      .addOptions([
+        { label: "Ark Raiders", value: "ark" },
+        { label: "World of Warcraft", value: "wow" }
+      ]);
 
-    if (!closedCategory)
-      return interaction.editReply("❌ اعمل كاتيجوري 𝐂𝐋𝐎𝐒𝐄𝐃");
+    const row = new ActionRowBuilder().addComponents(select);
 
-    await interaction.channel.setParent(closedCategory.id);
-    await interaction.channel.setName(`closed-${orderId}`);
+    await interaction.reply({ content: "Select Game:", components: [row], ephemeral: true });
+  }
 
-    await interaction.editReply("✅ تم نقل التيكت.");
+
+  // ===== GAME SELECT =====
+  if (interaction.isStringSelectMenu() && interaction.customId === "game_select") {
+
+    if (interaction.values[0] === "ark") {
+
+      const select = new StringSelectMenuBuilder()
+        .setCustomId("ark_type")
+        .setPlaceholder("Choose Type")
+        .addOptions([
+          { label: "Items", value: "items" },
+          { label: "Weapons", value: "weapons" }
+        ]);
+
+      const row = new ActionRowBuilder().addComponents(select);
+
+      return interaction.update({ content: "Select Category:", components: [row] });
+    }
+
+    if (interaction.values[0] === "wow") {
+      return createShopTicket(interaction, "World of Warcraft");
+    }
+  }
+
+
+  // ===== ARK CATEGORY =====
+  if (interaction.isStringSelectMenu() && interaction.customId === "ark_type") {
+
+    const type = interaction.values[0];
+    createShopTicket(interaction, `Ark Raiders - ${type}`);
   }
 
 });
+
+
+// ======================= CREATE SHOP TICKET =======================
+
+async function createShopTicket(interaction, productName) {
+
+  const category = interaction.guild.channels.cache.find(
+    c => c.name === TICKET_CATEGORY
+  );
+
+  const ticket = await interaction.guild.channels.create({
+    name: `shop-${interaction.user.username}`,
+    parent: category.id,
+    permissionOverwrites: [
+      {
+        id: interaction.guild.id,
+        deny: [PermissionsBitField.Flags.ViewChannel],
+      },
+      {
+        id: interaction.user.id,
+        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+      }
+    ]
+  });
+
+  await ticket.send(`
+🛍️ Shop Order
+
+👤 Client: <@${interaction.user.id}>
+🎮 Selected: ${productName}
+`);
+
+  await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
+}
 
 client.login(process.env.TOKEN);
