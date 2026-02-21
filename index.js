@@ -167,7 +167,14 @@ client.on('interactionCreate', async (interaction) => {
     );
 
     await channel.send({
-      content: `🎟️ Order #${orderId}\n👤 Client: <@${order.userId}>\n🛒 Seller: <@${interaction.user.id}>`,
+      content:
+`🎟️ **Order #${orderId}**
+
+📦 Item: ${order.service}
+💰 Price: $${order.price}
+
+👤 Client: <@${order.userId}>
+🛒 Seller: <@${interaction.user.id}>`,
       components: [closeRow]
     });
   }
