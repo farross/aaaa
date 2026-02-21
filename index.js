@@ -42,7 +42,7 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // ===== OWNER MANUAL ORDER (زي القديم بالظبط) =====
+  // ===== OWNER MANUAL ORDER =====
   if (message.content.startsWith("!order")) {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
@@ -64,7 +64,8 @@ client.on('messageCreate', async (message) => {
       seller: null,
       service,
       price,
-      userId: message.author.id
+      userId: message.author.id,
+      fromShop: false
     };
 
     const embed = new EmbedBuilder()
@@ -96,7 +97,7 @@ client.on('messageCreate', async (message) => {
     orders[orderCounter].messageId = msg.id;
   }
 
-  // ===== STORE COMMAND (OWNER ONLY) =====
+  // ===== STORE COMMAND =====
   if (message.content === "!store") {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
@@ -120,13 +121,13 @@ client.on('messageCreate', async (message) => {
 
 client.on('interactionCreate', async (interaction) => {
 
-  // ===== SELECT MENUS =====
+  // ===== SHOP SELECT =====
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === "select_game") {
 
       if (interaction.values[0] === "wow")
-        return createTicketOrder(interaction, "WoW Service", 20);
+        return createShopTicket(interaction, "WoW Service", 20);
 
       if (interaction.values[0] === "ark") {
 
@@ -154,7 +155,7 @@ client.on('interactionCreate', async (interaction) => {
         ? "ARK Raiders Items"
         : "ARK Raiders Weapons";
 
-      return createTicketOrder(interaction, serviceName, 15);
+      return createShopTicket(interaction, serviceName, 15);
     }
   }
 
@@ -196,6 +197,11 @@ client.on('interactionCreate', async (interaction) => {
     order.collected = true;
     order.seller = interaction.user.id;
 
+    // يفتح تيكت بس لو جاي من !order
+    if (!order.fromShop) {
+      await openTicket(interaction.guild, orderId, order, interaction.user.id);
+    }
+
     const msg = await interaction.channel.messages.fetch(order.messageId);
 
     const updated = new EmbedBuilder(msg.embeds[0])
@@ -221,9 +227,6 @@ Status: Collected`
 
   // ===== DELIVERED =====
   if (action === "delivered") {
-
-    if (order.delivered)
-      return interaction.reply({ content: "⚠️ متسلم بالفعل.", ephemeral: true });
 
     await interaction.deferUpdate();
     order.delivered = true;
@@ -266,9 +269,9 @@ Status: Delivered ✅`
   }
 });
 
-// ================= CREATE TICKET =================
+// ================= FUNCTIONS =================
 
-async function createTicketOrder(interaction, service, price) {
+async function createShopTicket(interaction, service, price) {
 
   orderCounter++;
 
@@ -278,62 +281,57 @@ async function createTicketOrder(interaction, service, price) {
     seller: null,
     service,
     price,
-    userId: interaction.user.id
+    userId: interaction.user.id,
+    fromShop: true
   };
 
-  const category = interaction.guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
-  if (!category)
-    return interaction.reply({ content: "❌ اعمل كاتيجوري 𝐓𝐢𝐜𝐤𝐞𝐭𝐬", ephemeral: true });
+  await openTicket(interaction.guild, orderCounter, orders[orderCounter], null);
 
-  const ticket = await interaction.guild.channels.create({
-    name: `ticket-${orderCounter}`,
+  await interaction.reply({
+    content: `✅ Ticket created!`,
+    ephemeral: true
+  });
+}
+
+async function openTicket(guild, orderId, order, sellerId) {
+
+  const category = guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
+  if (!category) return;
+
+  const ticket = await guild.channels.create({
+    name: `ticket-${orderId}`,
     parent: category.id,
     permissionOverwrites: [
-      { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-      { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
+      { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+      { id: order.userId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+      ...(sellerId ? [{
+        id: sellerId,
+        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
+      }] : [])
     ]
   });
 
-  const embed = new EmbedBuilder()
-    .setColor("#FFD700")
-    .setImage(BANNER_URL)
-    .setDescription(
-`📢 **New Order** <@&${GAMERS_ROLE_ID}>
-
-━━━━━━━━━━━━━━━━━━
-
-🔸 **Item:** ${service}
-💰 **Price:** $${price}
-
-🔹 **Order:** #${orderCounter}
-🔹 **Seller:** None
-🔹 **Status:** Pending
-
-━━━━━━━━━━━━━━━━━━`
-    );
-
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`collect_${orderCounter}`)
-      .setLabel("Collect")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId(`close_${orderCounter}`)
+      .setCustomId(`close_${orderId}`)
       .setLabel("Close Ticket")
       .setStyle(ButtonStyle.Danger)
   );
 
-  const msg = await ticket.send({
+  await ticket.send({
     content: `<@&${GAMERS_ROLE_ID}>`,
-    embeds: [embed],
+    embeds: [
+      new EmbedBuilder()
+        .setColor("#FFD700")
+        .setDescription(
+`📦 Order #${orderId}
+
+Item: ${order.service}
+Price: $${order.price}
+Status: Pending`
+        )
+    ],
     components: [row]
-  });
-
-  orders[orderCounter].messageId = msg.id;
-
-  await interaction.reply({
-    content: `✅ Ticket created: ${ticket}`,
-    ephemeral: true
   });
 }
 
