@@ -28,7 +28,6 @@ const OWNER_ROLE_NAME = "ᴼᵂᴺᴱᴿ";
 const GAMERS_ROLE_ID = "1474625885062697161";
 const TICKET_CATEGORY_NAME = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
 const CLOSED_CATEGORY_NAME = "𝐂𝐋𝐎𝐒𝐄𝐃";
-
 const BANNER_URL = "https://cdn.discordapp.com/attachments/963969901729546270/1474623270740561930/Yellow_Neon_Gaming_YouTube_Banner.png";
 
 let orderCounter = 3000;
@@ -43,7 +42,7 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // ===== OWNER ORDER =====
+  // ===== OWNER MANUAL ORDER (زي القديم بالظبط) =====
   if (message.content.startsWith("!order")) {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
@@ -57,10 +56,47 @@ client.on('messageCreate', async (message) => {
     const price = parseInt(args[1].replace("$","").trim());
     if (isNaN(price)) return message.reply("❌ السعر لازم رقم.");
 
-    createOrderEmbed(message.channel, service, price, message.author.id);
+    orderCounter++;
+
+    orders[orderCounter] = {
+      collected: false,
+      delivered: false,
+      seller: null,
+      service,
+      price,
+      userId: message.author.id
+    };
+
+    const embed = new EmbedBuilder()
+      .setColor("#FFD700")
+      .setImage(BANNER_URL)
+      .setDescription(
+`📢 **New Order** <@&${GAMERS_ROLE_ID}>
+
+━━━━━━━━━━━━━━━━━━
+
+🔸 **Item:** ${service}
+💰 **Price:** $${price}
+
+🔹 **Order:** #${orderCounter}
+🔹 **Seller:** None
+🔹 **Status:** Pending
+
+━━━━━━━━━━━━━━━━━━`
+      );
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`collect_${orderCounter}`)
+        .setLabel("Collect")
+        .setStyle(ButtonStyle.Success)
+    );
+
+    const msg = await message.channel.send({ embeds: [embed], components: [row] });
+    orders[orderCounter].messageId = msg.id;
   }
 
-  // ===== STORE (OWNER ONLY) =====
+  // ===== STORE COMMAND (OWNER ONLY) =====
   if (message.content === "!store") {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
@@ -84,10 +120,13 @@ client.on('messageCreate', async (message) => {
 
 client.on('interactionCreate', async (interaction) => {
 
-  // ===== GAME SELECT =====
+  // ===== SELECT MENUS =====
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === "select_game") {
+
+      if (interaction.values[0] === "wow")
+        return createTicketOrder(interaction, "WoW Service", 20);
 
       if (interaction.values[0] === "ark") {
 
@@ -106,17 +145,14 @@ client.on('interactionCreate', async (interaction) => {
           components: [arkMenu]
         });
       }
-
-      if (interaction.values[0] === "wow") {
-        return createTicketOrder(interaction, "WoW Service", 20);
-      }
     }
 
-    // ===== ARK FINAL SELECT =====
     if (interaction.customId === "select_ark_type") {
 
       const type = interaction.values[0];
-      const serviceName = type === "items" ? "ARK Raiders Items" : "ARK Raiders Weapons";
+      const serviceName = type === "items"
+        ? "ARK Raiders Items"
+        : "ARK Raiders Weapons";
 
       return createTicketOrder(interaction, serviceName, 15);
     }
@@ -152,6 +188,9 @@ client.on('interactionCreate', async (interaction) => {
   // ===== COLLECT =====
   if (action === "collect") {
 
+    if (order.collected)
+      return interaction.reply({ content: "⚠️ متجمع بالفعل.", ephemeral: true });
+
     await interaction.deferUpdate();
 
     order.collected = true;
@@ -182,6 +221,9 @@ Status: Collected`
 
   // ===== DELIVERED =====
   if (action === "delivered") {
+
+    if (order.delivered)
+      return interaction.reply({ content: "⚠️ متسلم بالفعل.", ephemeral: true });
 
     await interaction.deferUpdate();
     order.delivered = true;
@@ -215,16 +257,16 @@ Status: Delivered ✅`
 
     const closedCategory = interaction.guild.channels.cache.find(c => c.name === CLOSED_CATEGORY_NAME);
     if (!closedCategory)
-      return interaction.editReply("❌ Create CLOSED category");
+      return interaction.editReply("❌ اعمل كاتيجوري 𝐂𝐋𝐎𝐒𝐄𝐃");
 
     await interaction.channel.setParent(closedCategory.id);
     await interaction.channel.setName(`closed-${orderId}`);
 
-    await interaction.editReply("✅ Ticket moved to CLOSED");
+    await interaction.editReply("✅ تم نقل التيكت.");
   }
 });
 
-// ================= CREATE TICKET FUNCTION =================
+// ================= CREATE TICKET =================
 
 async function createTicketOrder(interaction, service, price) {
 
@@ -241,7 +283,7 @@ async function createTicketOrder(interaction, service, price) {
 
   const category = interaction.guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
   if (!category)
-    return interaction.reply({ content: "❌ Create 𝐓𝐢𝐜𝐤𝐞𝐭𝐬 category", ephemeral: true });
+    return interaction.reply({ content: "❌ اعمل كاتيجوري 𝐓𝐢𝐜𝐤𝐞𝐭𝐬", ephemeral: true });
 
   const ticket = await interaction.guild.channels.create({
     name: `ticket-${orderCounter}`,
@@ -254,12 +296,20 @@ async function createTicketOrder(interaction, service, price) {
 
   const embed = new EmbedBuilder()
     .setColor("#FFD700")
+    .setImage(BANNER_URL)
     .setDescription(
-`📦 Order #${orderCounter}
+`📢 **New Order** <@&${GAMERS_ROLE_ID}>
 
-Item: ${service}
-Price: $${price}
-Status: Pending`
+━━━━━━━━━━━━━━━━━━
+
+🔸 **Item:** ${service}
+💰 **Price:** $${price}
+
+🔹 **Order:** #${orderCounter}
+🔹 **Seller:** None
+🔹 **Status:** Pending
+
+━━━━━━━━━━━━━━━━━━`
     );
 
   const row = new ActionRowBuilder().addComponents(
