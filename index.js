@@ -9,8 +9,7 @@ const {
   ButtonStyle,
   EmbedBuilder,
   PermissionsBitField,
-  StringSelectMenuBuilder,
-  ChannelType
+  StringSelectMenuBuilder
 } = require('discord.js');
 
 const pool = require('./db');
@@ -183,6 +182,7 @@ client.on('interactionCreate', async (interaction) => {
   if (!order)
     return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
 
+  // ===== COLLECT =====
   if (action === "collect") {
 
     await interaction.deferUpdate();
@@ -191,7 +191,41 @@ client.on('interactionCreate', async (interaction) => {
     order.seller = interaction.user.id;
 
     if (!order.fromShop) {
-      await openTicket(interaction.guild, orderId, order, interaction.user.id);
+
+      const category = interaction.guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
+
+      const channel = await interaction.guild.channels.create({
+        name: `ticket-${orderId}`,
+        parent: category.id,
+        permissionOverwrites: [
+          { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+          { id: order.userId, allow: [
+              PermissionsBitField.Flags.ViewChannel,
+              PermissionsBitField.Flags.SendMessages
+            ] 
+          },
+          { id: interaction.user.id, allow: [
+              PermissionsBitField.Flags.ViewChannel,
+              PermissionsBitField.Flags.SendMessages
+            ] 
+          }
+        ]
+      });
+
+      await channel.send({
+        content: `<@${order.userId}>`,
+        embeds: [
+          new EmbedBuilder()
+            .setColor("#FFD700")
+            .setDescription(
+`📦 Order #${orderId}
+
+Item: ${order.service}
+Price: $${order.price}
+Status: Pending`
+            )
+        ]
+      });
     }
 
     const msg = await interaction.channel.messages.fetch(order.messageId);
@@ -217,27 +251,6 @@ Status: Collected`
     await msg.edit({ embeds: [updated], components: [row] });
   }
 
-  if (action === "delivered") {
-
-    await interaction.deferUpdate();
-    order.delivered = true;
-
-    const msg = await interaction.channel.messages.fetch(order.messageId);
-
-    const updated = new EmbedBuilder(msg.embeds[0])
-      .setDescription(
-`📦 Order #${orderId}
-
-Item: ${order.service}
-Price: $${order.price}
-
-Seller: <@${order.seller}>
-Status: ~~Collected~~ → Delivered ✅`
-      );
-
-    await msg.edit({ embeds: [updated], components: [] });
-  }
-
   if (action === "close") {
 
     await interaction.deferReply({ ephemeral: true });
@@ -253,7 +266,7 @@ Status: ~~Collected~~ → Delivered ✅`
   }
 });
 
-// ================= FUNCTIONS =================
+// ===== SHOP TICKET =====
 
 async function createShopTicket(interaction, service, price) {
 
@@ -269,69 +282,39 @@ async function createShopTicket(interaction, service, price) {
     fromShop: true
   };
 
-  await openTicket(interaction.guild, orderCounter, orders[orderCounter], null);
+  const category = interaction.guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
 
-  await interaction.reply({
-    content: `✅ Ticket created!`,
-    ephemeral: true
-  });
-}
-
-async function openTicket(guild, orderId, order, sellerId) {
-
-  const category = guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
-  if (!category) return;
-
-  const ticket = await guild.channels.create({
-    name: `ticket-${orderId}`,
-    type: ChannelType.GuildText,
+  const ticket = await interaction.guild.channels.create({
+    name: `ticket-${orderCounter}`,
     parent: category.id,
     permissionOverwrites: [
-      {
-        id: guild.id,
-        deny: [PermissionsBitField.Flags.ViewChannel]
-      },
-      {
-        id: order.userId,
-        allow: [
+      { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+      { id: interaction.user.id, allow: [
           PermissionsBitField.Flags.ViewChannel,
-          PermissionsBitField.Flags.SendMessages,
-          PermissionsBitField.Flags.ReadMessageHistory
-        ]
+          PermissionsBitField.Flags.SendMessages
+        ] 
       }
     ]
   });
 
-  if (sellerId) {
-    await ticket.permissionOverwrites.create(sellerId, {
-      ViewChannel: true,
-      SendMessages: true,
-      ReadMessageHistory: true
-    });
-  }
-
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`close_${orderId}`)
-      .setLabel("Close Ticket")
-      .setStyle(ButtonStyle.Danger)
-  );
-
   await ticket.send({
-    content: `<@${order.userId}>`,
-    allowedMentions: { users: [order.userId] },
+    content: `<@${interaction.user.id}>`,
     embeds: [
       new EmbedBuilder()
         .setColor("#FFD700")
         .setDescription(
-`📦 Order #${orderId}
+`📦 Order #${orderCounter}
 
-Item: ${order.service}
-Price: $${order.price}
+Item: ${service}
+Price: $${price}
 Status: Pending`
         )
-    ],
-    components: [row]
+    ]
+  });
+
+  await interaction.reply({
+    content: `✅ Ticket created!`,
+    ephemeral: true
   });
 }
 
