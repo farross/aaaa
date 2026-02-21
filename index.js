@@ -74,7 +74,7 @@ client.on('messageCreate', async (message) => {
 🔹 **Order:** #${orderCounter}
 🔹 **Seller:** None
 `)
-      .setImage("https://cdn.discordapp.com/attachments/963969901729546270/1474623270740561930/Yellow_Neon_Gaming_YouTube_Banner.png");
+      .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png?ex=699b73ea&is=699a226a&hm=8efb00dd1d88f8af6224197a5aaa7de421ea0b8c130d83f6588daf83a22edcc0&");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -277,3 +277,4 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
