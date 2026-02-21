@@ -10,8 +10,6 @@ const {
   PermissionsBitField
 } = require('discord.js');
 
-const pool = require('./db');
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -34,6 +32,9 @@ let orders = {};
 client.once('ready', () => {
   console.log(`${STORE_NAME} Ready 👑`);
 });
+
+
+// =================== ORDER COMMAND ===================
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
@@ -86,6 +87,9 @@ client.on('messageCreate', async (message) => {
   }
 });
 
+
+// =================== BUTTON SYSTEM ===================
+
 client.on('interactionCreate', async (interaction) => {
 
   if (!interaction.isButton()) return;
@@ -96,6 +100,7 @@ client.on('interactionCreate', async (interaction) => {
     return interaction.reply({ content: "❌ الأوردر غير موجود.", ephemeral: true });
   }
 
+  // ===== COLLECT =====
   if (action === "collect") {
 
     await interaction.deferReply({ ephemeral: true });
@@ -107,25 +112,8 @@ client.on('interactionCreate', async (interaction) => {
     orders[orderId].collected = true;
     orders[orderId].seller = interaction.user.id;
 
-    // تسجيل في الداتا بيز (مؤقت السعر 0)
-    try {
-      await pool.query(
-        `INSERT INTO orders (user_id, service, price, cost, profit, status)
-         VALUES ($1,$2,$3,$4,$5,'collected')`,
-        [
-          orders[orderId].userId,
-          orders[orderId].details,
-          0,
-          0,
-          0
-        ]
-      );
-    } catch (err) {
-      console.error("DB Error:", err);
-    }
-
     const category = interaction.guild.channels.cache.find(
-      c => c.name === TICKET_CATEGORY_NAME && c.type === 4
+      c => c.name === TICKET_CATEGORY_NAME
     );
 
     if (!category) {
@@ -134,7 +122,6 @@ client.on('interactionCreate', async (interaction) => {
 
     const channel = await interaction.guild.channels.create({
       name: `ticket-${orderId}`,
-      type: 0,
       parent: category.id,
       permissionOverwrites: [
         {
@@ -158,11 +145,37 @@ client.on('interactionCreate', async (interaction) => {
       ]
     });
 
-    await channel.send(`🎟️ Ticket for Order #${orderId}
-👤 Client: <@${orders[orderId].userId}>
-🛒 Seller: <@${interaction.user.id}>`);
+    const ticketEmbed = new EmbedBuilder()
+      .setColor("#FFD700")
+      .setTitle(`🎟️ Order #${orderId}`)
+      .setDescription(`
+🔸 **Details:** ${orders[orderId].details}
+
+👤 **Client:** <@${orders[orderId].userId}>
+🛒 **Seller:** <@${interaction.user.id}>
+`)
+      .setFooter({ text: `${STORE_NAME} • Ticket System` });
+
+    const closeRow = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`close_${orderId}`)
+          .setLabel("Close Ticket")
+          .setStyle(ButtonStyle.Danger)
+      );
+
+    await channel.send({ embeds: [ticketEmbed], components: [closeRow] });
 
     await interaction.editReply(`✅ تم فتح تيكت: ${channel}`);
+  }
+
+  // ===== CLOSE =====
+  if (action === "close") {
+
+    await interaction.deferReply({ ephemeral: true });
+
+    await interaction.channel.delete().catch(() => {});
+
   }
 
 });
