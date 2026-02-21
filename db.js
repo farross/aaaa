@@ -5,7 +5,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// إنشاء الجداول تلقائياً
 async function initDatabase() {
   try {
     await pool.query(`
