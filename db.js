@@ -10,6 +10,7 @@ async function initDatabase() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS orders (
         id SERIAL PRIMARY KEY,
+        order_number INTEGER,
         user_id TEXT,
         seller_id TEXT,
         service TEXT,
