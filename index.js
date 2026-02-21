@@ -45,7 +45,7 @@ client.on('messageCreate', async (message) => {
   if (message.content.startsWith("!order")) {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME)) {
-      return message.reply("❌ انت مش معاك صلاحية استخدام الأمر ده.");
+      return message.reply("❌ انت مش معاك صلاحية.");
     }
 
     const args = message.content.slice(7).split("|");
@@ -56,7 +56,7 @@ client.on('messageCreate', async (message) => {
     const service = args[0].trim();
     const price = parseInt(args[1].replace("$","").trim());
 
-    if (isNaN(price)) return message.reply("❌ السعر لازم يكون رقم.");
+    if (isNaN(price)) return message.reply("❌ السعر لازم رقم.");
 
     orderCounter++;
 
@@ -113,7 +113,7 @@ client.on('interactionCreate', async (interaction) => {
   if (action === "collect") {
 
     if (order.collected)
-      return interaction.reply({ content: "⚠️ الأوردر متجمع بالفعل.", ephemeral: true });
+      return interaction.reply({ content: "⚠️ متجمع بالفعل.", ephemeral: true });
 
     await interaction.deferUpdate();
 
@@ -148,6 +148,7 @@ client.on('interactionCreate', async (interaction) => {
 
     await originalMessage.edit({ embeds: [updatedEmbed], components: [row] });
 
+    // فتح تيكت
     const category = interaction.guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
 
     const channel = await interaction.guild.channels.create({
@@ -160,29 +161,35 @@ client.on('interactionCreate', async (interaction) => {
       ]
     });
 
-    await channel.send(`🎟️ Order #${orderId}\nItem: ${order.service}\nPrice: $${order.price}`);
+    const closeRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`close_${orderId}`)
+        .setLabel("Close Ticket")
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    await channel.send({
+      content: `🎟️ Order #${orderId}\n👤 Client: <@${order.userId}>\n🛒 Seller: <@${interaction.user.id}>`,
+      components: [closeRow]
+    });
   }
 
   // ===== DELIVERED =====
   if (action === "delivered") {
 
     if (order.delivered)
-      return interaction.reply({ content: "⚠️ الأوردر متسلم بالفعل.", ephemeral: true });
+      return interaction.reply({ content: "⚠️ متسلم بالفعل.", ephemeral: true });
 
     await interaction.deferUpdate();
 
     order.delivered = true;
 
-    // تسجيل في الداتا بيز
-    try {
-      await pool.query(
-        `INSERT INTO orders (user_id, seller_id, service, price, status)
-         VALUES ($1,$2,$3,$4,$5)`,
-        [order.userId, order.seller, order.service, order.price, "Delivered"]
-      );
-    } catch (err) {
-      console.error("DB ERROR:", err);
-    }
+    // تخزين في الداتا بيز
+    await pool.query(
+      `INSERT INTO orders (order_number, user_id, seller_id, service, price, status)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [orderId, order.userId, order.seller, order.service, order.price, "Delivered"]
+    );
 
     const originalMessage = await interaction.channel.messages.fetch(order.messageId);
 
@@ -204,6 +211,22 @@ client.on('interactionCreate', async (interaction) => {
       );
 
     await originalMessage.edit({ embeds: [updatedEmbed], components: [] });
+  }
+
+  // ===== CLOSE =====
+  if (action === "close") {
+
+    await interaction.deferReply({ ephemeral: true });
+
+    const closedCategory = interaction.guild.channels.cache.find(c => c.name === CLOSED_CATEGORY_NAME);
+
+    if (!closedCategory)
+      return interaction.editReply("❌ اعمل كاتيجوري 𝐂𝐋𝐎𝐒𝐄𝐃");
+
+    await interaction.channel.setParent(closedCategory.id);
+    await interaction.channel.setName(`closed-${orderId}`);
+
+    await interaction.editReply("✅ تم نقل التيكت.");
   }
 
 });
