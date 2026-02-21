@@ -4,7 +4,9 @@ const {
   ActionRowBuilder, 
   ButtonBuilder, 
   ButtonStyle, 
-  EmbedBuilder 
+  EmbedBuilder,
+  ChannelType,
+  PermissionsBitField
 } = require('discord.js');
 
 const client = new Client({
@@ -18,6 +20,8 @@ const client = new Client({
 const STORE_NAME = "BOOSTFIY";
 const STAFF_ROLE_NAME = "Staff";
 const GAMERS_ROLE_ID = "1474625885062697161";
+const TICKET_CATEGORY_NAME = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
+const LOG_CHANNEL_NAME = "order-logs";
 
 const BANNER_URL = "https://cdn.discordapp.com/attachments/963969901729546270/1474623270740561930/Yellow_Neon_Gaming_YouTube_Banner.png";
 
@@ -25,7 +29,7 @@ let orderCounter = 3000;
 let orders = {};
 
 client.once('clientReady', () => {
-  console.log(`${STORE_NAME} Ready 👑`);
+  console.log(`${STORE_NAME} FULL SYSTEM Ready 👑`);
 });
 
 client.on('messageCreate', async (message) => {
@@ -41,7 +45,8 @@ client.on('messageCreate', async (message) => {
     orders[orderCounter] = {
       collected: false,
       seller: null,
-      details: details
+      details: details,
+      ticketId: null
     };
 
     const embed = new EmbedBuilder()
@@ -80,28 +85,76 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-
 client.on('interactionCreate', async interaction => {
   if (!interaction.isButton()) return;
 
   const [action, id] = interaction.customId.split("_");
-
-  if (!orders[id]) {
-    return interaction.reply({ content: "الأوردر غير موجود.", ephemeral: true });
-  }
+  if (!orders[id]) return;
 
   const order = orders[id];
 
-  // 🟢 Collect
+  // ================= Collect =================
   if (action === "collect") {
 
-    if (order.collected) {
+    if (order.collected)
       return interaction.reply({ content: "❌ تم جمع الأوردر بالفعل.", ephemeral: true });
-    }
 
     order.collected = true;
     order.seller = interaction.user;
 
+    const category = interaction.guild.channels.cache.find(
+      c => c.name === TICKET_CATEGORY_NAME && c.type === ChannelType.GuildCategory
+    );
+
+    const staffRole = interaction.guild.roles.cache.find(r => r.name === STAFF_ROLE_NAME);
+
+    const ticketChannel = await interaction.guild.channels.create({
+      name: `order-${id}`,
+      type: ChannelType.GuildText,
+      parent: category?.id,
+      permissionOverwrites: [
+        {
+          id: interaction.guild.roles.everyone.id,
+          deny: [PermissionsBitField.Flags.ViewChannel],
+        },
+        {
+          id: interaction.user.id,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+        },
+        {
+          id: staffRole?.id,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+        }
+      ],
+    });
+
+    order.ticketId = ticketChannel.id;
+
+    const closeRow = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`close_${id}`)
+          .setLabel("Close Ticket")
+          .setStyle(ButtonStyle.Danger),
+
+        new ButtonBuilder()
+          .setCustomId(`delivered_${id}`)
+          .setLabel("Delivered")
+          .setStyle(ButtonStyle.Success)
+      );
+
+    await ticketChannel.send({
+      content: `🎟️ Order #${id}\nSeller: ${interaction.user}\n\n${order.details}`,
+      components: [closeRow]
+    });
+
+    // Log
+    const logChannel = interaction.guild.channels.cache.find(c => c.name === LOG_CHANNEL_NAME);
+    if (logChannel) {
+      logChannel.send(`📥 Order #${id} collected by ${interaction.user}`);
+    }
+
+    // Update order message
     const embed = new EmbedBuilder()
       .setColor("#ff4444")
       .setImage(BANNER_URL)
@@ -118,36 +171,46 @@ client.on('interactionCreate', async interaction => {
 🔴 **Status:** Collected
 
 ━━━━━━━━━━━━━━━━━━`
-      )
-      .setFooter({ text: `${STORE_NAME} • Premium Gaming Services` });
+      );
 
-    const newRow = new ActionRowBuilder()
+    const disabledRow = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
           .setCustomId("collected")
           .setLabel("Collected")
           .setStyle(ButtonStyle.Danger)
-          .setDisabled(true),
-
-        new ButtonBuilder()
-          .setCustomId(`manage_${id}`)
-          .setLabel("Manage")
-          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(true)
       );
 
-    await interaction.update({ embeds: [embed], components: [newRow] });
+    await interaction.update({ embeds: [embed], components: [disabledRow] });
   }
 
-  // 🟡 Manage (ستاف فقط)
-  if (action === "manage") {
+  // ================= Close Ticket =================
+  if (action === "close") {
 
-    const member = interaction.member;
+    const staffRole = interaction.guild.roles.cache.find(r => r.name === STAFF_ROLE_NAME);
 
-    if (!member.roles.cache.some(r => r.name === STAFF_ROLE_NAME)) {
+    if (!interaction.member.roles.cache.has(staffRole?.id))
       return interaction.reply({ content: "❌ للستاف فقط.", ephemeral: true });
+
+    await interaction.reply("🔒 سيتم إغلاق التيكت بعد 3 ثواني...");
+    setTimeout(() => interaction.channel.delete(), 3000);
+  }
+
+  // ================= Delivered =================
+  if (action === "delivered") {
+
+    const staffRole = interaction.guild.roles.cache.find(r => r.name === STAFF_ROLE_NAME);
+
+    if (!interaction.member.roles.cache.has(staffRole?.id))
+      return interaction.reply({ content: "❌ للستاف فقط.", ephemeral: true });
+
+    const logChannel = interaction.guild.channels.cache.find(c => c.name === LOG_CHANNEL_NAME);
+    if (logChannel) {
+      logChannel.send(`✅ Order #${id} delivered.`);
     }
 
-    await interaction.reply({ content: `⚙️ إدارة الأوردر #${id}`, ephemeral: true });
+    await interaction.reply("✅ تم تعليم الأوردر كمُسلّم.");
   }
 });
 
