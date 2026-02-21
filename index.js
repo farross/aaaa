@@ -20,9 +20,9 @@ const client = new Client({
 });
 
 const STORE_NAME = "BOOSTFIY";
-const STAFF_ROLE_NAME = "Staff";
 const GAMERS_ROLE_ID = "1474625885062697161";
 const TICKET_CATEGORY_NAME = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
+const CLOSED_CATEGORY_NAME = "𝐂𝐋𝐎𝐒𝐄𝐃";
 
 const BANNER_URL = "https://cdn.discordapp.com/attachments/963969901729546270/1474623270740561930/Yellow_Neon_Gaming_YouTube_Banner.png";
 
@@ -34,7 +34,7 @@ client.once('ready', () => {
 });
 
 
-// =================== ORDER COMMAND ===================
+// ================= ORDER =================
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
@@ -48,6 +48,7 @@ client.on('messageCreate', async (message) => {
 
     orders[orderCounter] = {
       collected: false,
+      delivered: false,
       seller: null,
       details: details,
       userId: message.author.id
@@ -67,58 +68,72 @@ client.on('messageCreate', async (message) => {
 🔹 **Seller:** None
 
 ━━━━━━━━━━━━━━━━━━`
-      )
-      .setFooter({ text: `${STORE_NAME} • Premium Gaming Services` });
-
-    const row = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`collect_${orderCounter}`)
-          .setLabel("Collect")
-          .setStyle(ButtonStyle.Success),
-
-        new ButtonBuilder()
-          .setCustomId(`manage_${orderCounter}`)
-          .setLabel("Manage")
-          .setStyle(ButtonStyle.Secondary)
       );
 
-    message.channel.send({ embeds: [embed], components: [row] });
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`collect_${orderCounter}`)
+        .setLabel("Collect")
+        .setStyle(ButtonStyle.Success)
+    );
+
+    const msg = await message.channel.send({ embeds: [embed], components: [row] });
+
+    orders[orderCounter].messageId = msg.id;
   }
 });
 
 
-// =================== BUTTON SYSTEM ===================
+// ================= BUTTONS =================
 
 client.on('interactionCreate', async (interaction) => {
 
   if (!interaction.isButton()) return;
 
   const [action, orderId] = interaction.customId.split("_");
-
-  if (!orders[orderId]) {
-    return interaction.reply({ content: "❌ الأوردر غير موجود.", ephemeral: true });
-  }
+  const order = orders[orderId];
+  if (!order) return interaction.reply({ content: "❌ الأوردر مش موجود.", ephemeral: true });
 
   // ===== COLLECT =====
   if (action === "collect") {
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferUpdate();
 
-    if (orders[orderId].collected) {
-      return interaction.editReply("⚠️ الأوردر متجمع بالفعل.");
-    }
+    if (order.collected) return;
 
-    orders[orderId].collected = true;
-    orders[orderId].seller = interaction.user.id;
+    order.collected = true;
+    order.seller = interaction.user.id;
 
+    const originalMessage = await interaction.channel.messages.fetch(order.messageId);
+
+    const updatedEmbed = new EmbedBuilder(originalMessage.embeds[0])
+      .setDescription(
+`📢 **New Order** <@&${GAMERS_ROLE_ID}>
+
+━━━━━━━━━━━━━━━━━━
+
+🔸 ~~Details: ${order.details}~~
+
+🔹 **Order:** #${orderId}
+🔹 **Seller:** <@${interaction.user.id}>
+🔹 **Status:** Collected
+
+━━━━━━━━━━━━━━━━━━`
+      );
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`delivered_${orderId}`)
+        .setLabel("Delivered")
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    await originalMessage.edit({ embeds: [updatedEmbed], components: [row] });
+
+    // فتح تيكت
     const category = interaction.guild.channels.cache.find(
       c => c.name === TICKET_CATEGORY_NAME
     );
-
-    if (!category) {
-      return interaction.editReply("❌ كاتيجوري 𝐓𝐢𝐜𝐤𝐞𝐭𝐬 مش موجودة.");
-    }
 
     const channel = await interaction.guild.channels.create({
       name: `ticket-${orderId}`,
@@ -129,18 +144,12 @@ client.on('interactionCreate', async (interaction) => {
           deny: [PermissionsBitField.Flags.ViewChannel],
         },
         {
-          id: orders[orderId].userId,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages
-          ],
+          id: order.userId,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
         },
         {
           id: interaction.user.id,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages
-          ],
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
         }
       ]
     });
@@ -149,33 +158,68 @@ client.on('interactionCreate', async (interaction) => {
       .setColor("#FFD700")
       .setTitle(`🎟️ Order #${orderId}`)
       .setDescription(`
-🔸 **Details:** ${orders[orderId].details}
+🔸 **Details:** ${order.details}
 
-👤 **Client:** <@${orders[orderId].userId}>
+👤 **Client:** <@${order.userId}>
 🛒 **Seller:** <@${interaction.user.id}>
-`)
-      .setFooter({ text: `${STORE_NAME} • Ticket System` });
+`);
 
-    const closeRow = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`close_${orderId}`)
-          .setLabel("Close Ticket")
-          .setStyle(ButtonStyle.Danger)
-      );
+    const closeRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`close_${orderId}`)
+        .setLabel("Close Ticket")
+        .setStyle(ButtonStyle.Danger)
+    );
 
     await channel.send({ embeds: [ticketEmbed], components: [closeRow] });
-
-    await interaction.editReply(`✅ تم فتح تيكت: ${channel}`);
   }
+
+
+  // ===== DELIVERED =====
+  if (action === "delivered") {
+
+    await interaction.deferUpdate();
+
+    order.delivered = true;
+
+    const originalMessage = await interaction.channel.messages.fetch(order.messageId);
+
+    const updatedEmbed = new EmbedBuilder(originalMessage.embeds[0])
+      .setDescription(
+`📢 **New Order** <@&${GAMERS_ROLE_ID}>
+
+━━━━━━━━━━━━━━━━━━
+
+🔸 ~~Details: ${order.details}~~
+
+🔹 **Order:** #${orderId}
+🔹 **Seller:** <@${order.seller}>
+🔹 **Status:** Delivered ✅
+
+━━━━━━━━━━━━━━━━━━`
+      );
+
+    await originalMessage.edit({ embeds: [updatedEmbed], components: [] });
+  }
+
 
   // ===== CLOSE =====
   if (action === "close") {
 
     await interaction.deferReply({ ephemeral: true });
 
-    await interaction.channel.delete().catch(() => {});
+    const closedCategory = interaction.guild.channels.cache.find(
+      c => c.name === CLOSED_CATEGORY_NAME
+    );
 
+    if (!closedCategory) {
+      return interaction.editReply("❌ اعمل كاتيجوري باسم 𝐂𝐋𝐎𝐒𝐄𝐃");
+    }
+
+    await interaction.channel.setParent(closedCategory.id);
+    await interaction.channel.setName(`closed-${orderId}`);
+
+    await interaction.editReply("✅ تم نقل التيكت إلى CLOSED");
   }
 
 });
