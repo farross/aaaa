@@ -128,8 +128,7 @@ client.on('interactionCreate', async (interaction) => {
 
 ━━━━━━━━━━━━━━━━━━
 
-🔸 ~~${order.service}~~
-
+🔸 **Item:** ${order.service}
 💰 **Price:** $${order.price}
 
 🔹 **Order:** #${orderId}
@@ -148,7 +147,6 @@ client.on('interactionCreate', async (interaction) => {
 
     await originalMessage.edit({ embeds: [updatedEmbed], components: [row] });
 
-    // فتح تيكت
     const category = interaction.guild.channels.cache.find(c => c.name === TICKET_CATEGORY_NAME);
 
     const channel = await interaction.guild.channels.create({
@@ -184,7 +182,6 @@ client.on('interactionCreate', async (interaction) => {
 
     order.delivered = true;
 
-    // تخزين في الداتا بيز
     await pool.query(
       `INSERT INTO orders (order_number, user_id, seller_id, service, price, status)
        VALUES ($1,$2,$3,$4,$5,$6)`,
@@ -199,8 +196,7 @@ client.on('interactionCreate', async (interaction) => {
 
 ━━━━━━━━━━━━━━━━━━
 
-🔸 ~~${order.service}~~
-
+🔸 **Item:** ${order.service}
 💰 **Price:** $${order.price}
 
 🔹 **Order:** #${orderId}
