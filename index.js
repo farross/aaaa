@@ -24,9 +24,9 @@ const client = new Client({
 const OWNER_ROLE_NAME = "ᴼᵂᴺᴱᴿ";
 const GAMERS_ROLE_ID = "1474625885062697161";
 
-const ORDERS_CHANNEL_ID = "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦";
-const TICKET_CATEGORY_ID = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
-const CLOSED_CATEGORY_ID = "𝐂𝐋𝐎𝐒𝐄𝐃";
+const ORDERS_CHANNEL_ID = "1474602944983990290";
+const TICKET_CATEGORY_ID = "1474602945579450458";
+const CLOSED_CATEGORY_ID = "1474602945579450459";
 
 let orderCounter = 3600;
 let orders = {};
@@ -63,7 +63,7 @@ client.on('messageCreate', async (message) => {
       messageId: null
     };
 
-    const ordersChannel = message.guild.channels.cache.get(〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦);
+    const ordersChannel = message.guild.channels.cache.get("1474602944983990290");
     if (!ordersChannel)
       return message.reply("❌ روم الأوردرات مش موجود.");
 
@@ -291,5 +291,6 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
