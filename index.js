@@ -43,10 +43,6 @@ if (message.content.startsWith("!order")) {
   if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
     return message.reply("❌ انت مش معاك صلاحية.");
 
-  const args = message.content.slice(7).split("");
-  if (args.length < 3)
-    return message.reply("❌ استخدم:\n!order | ");
-
   const service = args[0].trim();
   const price = args[1].trim();
   const code = args[2].trim();
@@ -303,6 +299,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
