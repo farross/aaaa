@@ -38,74 +38,76 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // ===== iORDER COMMAND =====
-  if (message.content.startsWith("iorder")) {
+if (message.content.startsWith("!order")) {
 
-    if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
-      return message.reply("❌ انت مش معاك صلاحية.");
+  if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
+    return message.reply("❌ انت مش معاك صلاحية.");
 
-    const args = message.content.slice(7).split("|");
-    if (args.length < 3)
-      return message.reply("❌ استخدم:\niorder name | price | code");
+  const args = message.content.slice(7).split("|");
+  if (args.length < 3)
+    return message.reply("❌ استخدم:\n!order name | price$ | code");
 
-    const service = args[0].trim();
-    const price = args[1].trim();
-    const code = args[2].trim();
+  const service = args[0].trim();
+  const price = args[1].trim();
+  const code = args[2].trim();
 
-    orderCounter++;
+  orderCounter++;
 
-    orders[orderCounter] = {
-      service,
-      price,
-      code,
-      client: message.author.id,
-      seller: null,
-      messageId: null
-    };
+  orders[orderCounter] = {
+    service,
+    price,
+    code,
+    client: message.author.id,
+    seller: null,
+    messageId: null
+  };
 
-    // 👇 يخلي الاوردر ينزل في روم معينة
-    const ordersChannel = message.guild.channels.cache.find(
-      c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
-    );
+  // 👇 يخلي الاوردر ينزل في روم معينة
+  const ordersChannel = message.guild.channels.cache.find(
+    c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
+  );
 
-    if (!ordersChannel) return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
+  if (!ordersChannel)return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
 
-    // 🎯 الإيمبد زي الصورة بالضبط
-    const embed = new EmbedBuilder()
-  .setColor("#8B0000")
-  .setAuthor({
-    name: "BABA STORE",
-    iconURL: "https://i.imgur.com/F5smH5G.png" // شعار صغير على اليسار من الأعلى
-  })
-  .setDescription(
-    `📦 **Order Details**`
-  )
-  .addFields(
-    {
-      name: "\u200B",
-      value: `\`\`\`\n${service}\n\`\`\``,
-      inline: true
-    },
-    {
-      name: "🪙 Price:",
-      value: price,
-      inline: true
-    },
-    {
-      name: "🆔 Order ID:",
-      value: `#${orderCounter}`,
-      inline: true
-    },
-    {
-      name: "👤 Assigned Seller:",
-      value: seller ? `<@${seller}>` : "None",
-      inline: true
-    }
-  )
-  .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1475238876401373294/Black_Geometric_Minimalist_Gaming_Logo_-_1_-_Edited.png?ex=699cc2c4&is=699b7144&hm=1c329497afc47240b1ba17aed7ee206b1ca61a226b45841f80187423fd4afbd2&") // رابط الصورة العريضة الكبيرة تماماً مثل الصوره المرفقة
-  // .setThumbnail("https://cdn.discordapp.com/attachments/1474602944983990290/1475225250810827024/Vita_Spray_Blueprint.webp?ex=699cb614&is=699b6494&hm=483e1899e14a2a3b3497f6fb1f4c33e591c4c895a8331572a6d6831335fa8a74&")  ← حذفنا الـ thumbnail ليظهر عرض الصورة أكبر
-  .setFooter({ text: "© CODE-RS" })
-  .setTimestamp();
+  const embed = new EmbedBuilder()
+    .setColor("#2b2d31")
+    .setDescription(
+`📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔸 Details: **${service}**
+
+💠 Order: **${orderCounter}**
+👤 Seller: **None**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+    )
+    .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&");
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`collect_${orderCounter}`)
+      .setLabel("Collect")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId(`manage_${orderCounter}`)
+      .setLabel("Manage")
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  const msg = await ordersChannel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  orders[orderCounter].messageId = msg.id;
+}
+
+  if (message.content === "!store") {
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("buy_start")
+        .setLabel("🛒 Buy")
+        .setStyle(ButtonStyle.Success)
     );
 
     message.channel.send({
@@ -191,13 +193,12 @@ client.on('interactionCreate', async (interaction) => {
 
     const updatedEmbed = new EmbedBuilder(originalMsg.embeds[0])
       .setDescription(
-`📢 **NEW ORDER** <@&${GAMERS_ROLE_ID}>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔸 Details: **${data.service}**
+`🔸 ~~${data.service}~~
+💰 ~~${data.price}~~
+🔑 ~~${data.code}~~
 
-💠 Order: **${id}**
-👤 Seller: **<@${data.seller}>**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+🔹 **Order:** #${id}
+🔹 **Seller:** <@${data.seller}>`
       );
 
     const newRow = new ActionRowBuilder().addComponents(
@@ -302,3 +303,8 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
+
+
+
+
