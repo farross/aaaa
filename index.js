@@ -74,9 +74,9 @@ if (message.content.startsWith("!order")) {
     .setDescription(
 `📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔸 #Details: # ${service}
+🔸 Details: **${service}**
 
-💠 Order: **#${orderCounter}**
+💠 Order: **${orderCounter}**
 👤 Seller: **None**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
     )
@@ -303,6 +303,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
