@@ -80,7 +80,7 @@ if (message.content.startsWith("!order")) {
 👤 Seller: **None**
 ـــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ`
     )
-    .setImage("https://cdn.discordapp.com/attachments/1474602945248235545/1474981577619542037/1.png?ex=699bd323&is=699a81a3&hm=3ad8db82715cccd9d2b66a2c20fa320390a14396f5912e7d9bf401f2fe6e621a&");
+    .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474983817222553736/zby_1.png?ex=699bd539&is=699a83b9&hm=b13bf77f7e365de58c1a9e1f8c628f94e8ce31973d47648b78fca2de18d71dbb&");
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -303,6 +303,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
