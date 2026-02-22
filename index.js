@@ -45,7 +45,7 @@ if (message.content.startsWith("!order")) {
 
   const args = message.content.slice(7).split("|");
   if (args.length < 3)
-    return message.reply("❌ استخدم:\n!order name | price$ | code");
+    return message.reply("❌ استخدم:\n!order name");
 
   const service = args[0].trim();
   const price = args[1].trim();
@@ -303,6 +303,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
