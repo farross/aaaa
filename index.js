@@ -76,7 +76,7 @@ if (message.content.startsWith("!order")) {
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔸 Details: **${service}**
+🔸 Details: **${service}**aklsghkahgkjxjkzbxgjkkjhaskjdgsdgsdhsdhfsdh,sjdghkjsdgksdjgkjsdgjkdsbgkjsdhgjkd
 
 💰 Price: **${price}**
 🔑 Code: **${code}**
@@ -309,6 +309,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
