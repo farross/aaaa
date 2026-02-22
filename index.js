@@ -74,18 +74,19 @@ if (message.content.startsWith("!order")) {
     .setDescription(
 `📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 🔸 Details: **${service}**
 
-💰 Price: **${price}** 🔑 Code: **${code}**
+💰 Price: **${price}**
+🔑 Code: **${code}**
 
 💠 Order: **#${orderCounter}**
 👤 Seller: **None**
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
     )
-    .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
+    .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474965535690195150/Black_Geometric_Minimalist_Gaming_Logo_3.png?ex=699bc433&is=699a72b3&hm=b128b8d42840f13c4edf461536792d495e10a4e34cc66a6cec143a274bff1b18&");
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -308,7 +309,6 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
-
 
 
 
