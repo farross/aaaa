@@ -38,7 +38,6 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // ===== !order =====
   if (message.content.startsWith("!order")) {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
@@ -66,15 +65,15 @@ client.on('messageCreate', async (message) => {
     const embed = new EmbedBuilder()
       .setColor("#2b2d31")
       .setTitle("📢 New Order")
-      .setDescription(`
-🔸 **Details:** ${service}
+      .setDescription(
+`🔸 **Details:** ${service}
 💰 **Price:** ${price}
 🔑 **Code:** ${code}
 
 🔹 **Order:** #${orderCounter}
-🔹 **Seller:** None
-`)
-      .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png?ex=699b73ea&is=699a226a&hm=8efb00dd1d88f8af6224197a5aaa7de421ea0b8c130d83f6588daf83a22edcc0&");
+🔹 **Seller:** None`
+      )
+      .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -96,7 +95,6 @@ client.on('messageCreate', async (message) => {
     orders[orderCounter].messageId = msg.id;
   }
 
-  // ===== !store =====
   if (message.content === "!store") {
 
     const row = new ActionRowBuilder().addComponents(
@@ -117,7 +115,7 @@ client.on('messageCreate', async (message) => {
 
 client.on('interactionCreate', async (interaction) => {
 
-  // ===== BUY BUTTON =====
+  // ===== BUY =====
   if (interaction.isButton() && interaction.customId === "buy_start") {
 
     const menu = new ActionRowBuilder().addComponents(
@@ -137,7 +135,7 @@ client.on('interactionCreate', async (interaction) => {
     });
   }
 
-  // ===== GAME SELECT =====
+  // ===== SELECT MENU =====
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === "select_game") {
@@ -185,6 +183,31 @@ client.on('interactionCreate', async (interaction) => {
 
     data.seller = interaction.user.id;
 
+    const originalMsg = await interaction.channel.messages.fetch(data.messageId);
+
+    const updatedEmbed = new EmbedBuilder(originalMsg.embeds[0])
+      .setDescription(
+`🔸 ~~${data.service}~~
+💰 ~~${data.price}~~
+🔑 ~~${data.code}~~
+
+🔹 **Order:** #${id}
+🔹 **Seller:** <@${data.seller}>`
+      );
+
+    const newRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`delivered_${id}`)
+        .setLabel("Delivered")
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId(`manage_${id}`)
+        .setLabel("Manage")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    await originalMsg.edit({ embeds: [updatedEmbed], components: [newRow] });
+
     const category = interaction.guild.channels.cache.find(
       c => c.name === TICKET_CATEGORY_NAME
     );
@@ -195,7 +218,7 @@ client.on('interactionCreate', async (interaction) => {
       permissionOverwrites: [
         { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
         { id: data.client, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-        { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
+        { id: data.seller, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
       ]
     });
 
@@ -207,16 +230,15 @@ client.on('interactionCreate', async (interaction) => {
     );
 
     await ticket.send({
-      content: `
-🎟️ Order #${id}
+      content:
+`🎟️ Order #${id}
 
 👤 Client: <@${data.client}>
 🛒 Seller: <@${data.seller}>
 
 📦 ${data.service}
 💰 ${data.price}
-🔑 ${data.code}
-`,
+🔑 ${data.code}`,
       components: [closeRow]
     });
 
@@ -235,7 +257,6 @@ client.on('interactionCreate', async (interaction) => {
 
     await interaction.reply({ content: "✅ Ticket Closed", ephemeral: true });
   }
-
 });
 
 async function createShopTicket(interaction, service, price) {
@@ -263,13 +284,12 @@ async function createShopTicket(interaction, service, price) {
   );
 
   await ticket.send({
-    content: `
-🛍️ Shop Order
+    content:
+`🛍️ Shop Order
 
 👤 Client: <@${interaction.user.id}>
 📦 ${service}
-💰 ${price}
-`,
+💰 ${price}`,
     components: [closeRow]
   });
 
@@ -277,4 +297,3 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
-
