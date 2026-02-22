@@ -38,14 +38,18 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-if (message.content.trim() === "!order") {
+if (message.content.startsWith("!order")) {
 
   if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
     return message.reply("❌ انت مش معاك صلاحية.");
 
-  const service = "Key Testing";
-  const price = "60$";
-  const code = "21";
+  const args = message.content.slice(7).split("|");
+  if (args.length < 3)
+    return message.reply("❌ استخدم:\n!order name | price$ | code");
+
+  const service = args[0].trim();
+  const price = args[1].trim();
+  const code = args[2].trim();
 
   orderCounter++;
 
@@ -57,10 +61,6 @@ if (message.content.trim() === "!order") {
     seller: null,
     messageId: null
   };
-
-  // 👇 يفضل الإيمبد والكود اللي تحت زي ما هو
-  const ordersChannel = ...
-  const embed = ...
 
   // 👇 يخلي الاوردر ينزل في روم معينة
   const ordersChannel = message.guild.channels.cache.find(
@@ -74,13 +74,13 @@ if (message.content.trim() === "!order") {
     .setDescription(
 `📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔸 Details: **${service}**
+🔸 #Details: # ${service}
 
 💠 Order: **#${orderCounter}**
 👤 Seller: **None**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
     )
-    .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474985664306216990/zby_3.png?ex=699bd6f2&is=699a8572&hm=e5e5edeaa25068c58827b203fd305ddc6bdd880ba862352406be144c86739de7&");
+    .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474974464419827792/1.png?ex=699bcc84&is=699a7b04&hm=a82d537ebcbe05c95e15d80ea9077d3b9260cf627e6fd2d45e7e8bf063a37d61&");
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -303,11 +303,6 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
-
-
-
-
-
 
 
 
