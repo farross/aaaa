@@ -58,6 +58,10 @@ if (message.content.trim() === "!order") {
     messageId: null
   };
 
+  // 👇 يفضل الإيمبد والكود اللي تحت زي ما هو
+  const ordersChannel = ...
+  const embed = ...
+
   // 👇 يخلي الاوردر ينزل في روم معينة
   const ordersChannel = message.guild.channels.cache.find(
     c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
@@ -299,6 +303,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
