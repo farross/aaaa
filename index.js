@@ -23,8 +23,10 @@ const client = new Client({
 
 const OWNER_ROLE_NAME = "ᴼᵂᴺᴱᴿ";
 const GAMERS_ROLE_ID = "1474625885062697161";
-const TICKET_CATEGORY_NAME = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
-const CLOSED_CATEGORY_NAME = "𝐂𝐋𝐎𝐒𝐄𝐃";
+
+const ORDERS_CHANNEL_ID = "PUT_ORDERS_CHANNEL_ID";
+const TICKET_CATEGORY_ID = "PUT_TICKET_CATEGORY_ID";
+const CLOSED_CATEGORY_ID = "PUT_CLOSED_CATEGORY_ID";
 
 let orderCounter = 3600;
 let orders = {};
@@ -33,74 +35,65 @@ client.once('ready', () => {
   console.log("BOOSTFIY Ready 👑");
 });
 
-// ======================= MESSAGE =======================
-
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-if (message.content.startsWith("!order")) {
+  // ================= ORDER =================
+  if (message.content.startsWith("!order")) {
 
-  if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
-    return message.reply("❌ انت مش معاك صلاحية.");
+    if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
+      return message.reply("❌ انت مش معاك صلاحية.");
 
-  const args = message.content.slice(7).split("|");
-  if (args.length < 3)
-    return message.reply("❌ استخدم:\n!order name | price$ | code");
+    const args = message.content.slice(7).split("|");
+    if (args.length < 3)
+      return message.reply("❌ استخدم:\n!order name | price$ | code");
 
-  const service = args[0].trim();
-  const price = args[1].trim();
-  const code = args[2].trim();
+    const service = args[0].trim();
+    const price = args[1].trim();
+    const code = args[2].trim();
 
-  orderCounter++;
+    orderCounter++;
 
-  orders[orderCounter] = {
-    service,
-    price,
-    code,
-    client: message.author.id,
-    seller: null,
-    messageId: null
-  };
+    orders[orderCounter] = {
+      service,
+      price,
+      code,
+      client: message.author.id,
+      seller: null,
+      messageId: null
+    };
 
-  // 👇 يخلي الاوردر ينزل في روم معينة
-  const ordersChannel = message.guild.channels.cache.find(
-    c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
-  );
+    const ordersChannel = message.guild.channels.cache.get(ORDERS_CHANNEL_ID);
+    if (!ordersChannel)
+      return message.reply("❌ روم الأوردرات مش موجود.");
 
-  if (!ordersChannel)return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
-
-  const embed = new EmbedBuilder()
-    .setColor("#2F3136")
-    .setDescription(
+    const embed = new EmbedBuilder()
+      .setColor("#2F3136")
+      .setDescription(
 `📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━
 🔸 Details: **${service}**
-
 💠 Order: **${orderCounter}**
 👤 Seller: **None**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
-    )
-.setImage('https://i.thteam.me/f9E5xsy-aX.png') // الصورة العريضة (استبدل بالرابط المناسب)
+━━━━━━━━━━━━━━━━━━━━`
+      );
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`collect_${orderCounter}`)
-      .setLabel("Collect")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId(`manage_${orderCounter}`)
-      .setLabel("Manage")
-      .setStyle(ButtonStyle.Secondary)
-  );
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`collect_${orderCounter}`)
+        .setLabel("Collect")
+        .setStyle(ButtonStyle.Success)
+    );
 
-  const msg = await ordersChannel.send({
-    embeds: [embed],
-    components: [row]
-  });
+    const msg = await ordersChannel.send({
+      embeds: [embed],
+      components: [row]
+    });
 
-  orders[orderCounter].messageId = msg.id;
-}
+    orders[orderCounter].messageId = msg.id;
+  }
 
+  // ================= STORE =================
   if (message.content === "!store") {
 
     const row = new ActionRowBuilder().addComponents(
@@ -117,34 +110,117 @@ if (message.content.startsWith("!order")) {
   }
 });
 
-// ======================= INTERACTIONS =======================
-
+// ================= INTERACTIONS =================
 client.on('interactionCreate', async (interaction) => {
 
-  // ===== BUY =====
-  if (interaction.isButton() && interaction.customId === "buy_start") {
+  if (interaction.isButton()) {
 
-    const menu = new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId("select_game")
-        .setPlaceholder("Choose Game")
-        .addOptions([
-          { label: "WoW", value: "wow" },
-          { label: "ARK Raiders", value: "ark" }
-        ])
-    );
+    // ===== BUY =====
+    if (interaction.customId === "buy_start") {
 
-    return interaction.reply({
-      content: "Select Game:",
-      components: [menu],
-      ephemeral: true
-    });
+      const menu = new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId("select_game")
+          .setPlaceholder("Choose Game")
+          .addOptions([
+            { label: "WoW", value: "wow" },
+            { label: "ARK Raiders", value: "ark" }
+          ])
+      );
+
+      return interaction.reply({
+        content: "Select Game:",
+        components: [menu],
+        ephemeral: true
+      });
+    }
+
+    // ===== COLLECT =====
+    if (interaction.customId.startsWith("collect_")) {
+
+      const id = interaction.customId.split("_")[1];
+      const data = orders[id];
+      if (!data)
+        return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
+
+      // 🔒 منع Double Collect
+      if (data.seller)
+        return interaction.reply({ content: "❌ الاوردر متاخد بالفعل.", ephemeral: true });
+
+      data.seller = interaction.user.id;
+
+      const originalMsg = await interaction.channel.messages.fetch(data.messageId);
+
+      const updatedEmbed = new EmbedBuilder(originalMsg.embeds[0])
+        .setDescription(
+`🔸 ~~${data.service}~~
+💰 ~~${data.price}~~
+🔑 ~~${data.code}~~
+
+🔹 **Order:** #${id}
+🔹 **Seller:** <@${data.seller}>`
+        );
+
+      await originalMsg.edit({ embeds: [updatedEmbed], components: [] });
+
+      const category = interaction.guild.channels.cache.get(TICKET_CATEGORY_ID);
+      if (!category)
+        return interaction.reply({ content: "❌ Ticket category missing.", ephemeral: true });
+
+      const ticket = await interaction.guild.channels.create({
+        name: `ticket-${id}`,
+        parent: category.id,
+        permissionOverwrites: [
+          { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+          { id: data.client, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+          { id: data.seller, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
+        ]
+      });
+
+      const closeRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`close_${id}`)
+          .setLabel("Close Ticket")
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      await ticket.send({
+        content:
+`🎟️ Order #${id}
+
+👤 Client: <@${data.client}>
+🛒 Seller: <@${data.seller}>
+
+📦 ${data.service}
+💰 ${data.price}
+🔑 ${data.code}`,
+        components: [closeRow]
+      });
+
+      return interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
+    }
+
+    // ===== CLOSE =====
+    if (interaction.customId.startsWith("close_")) {
+
+      const closedCategory = interaction.guild.channels.cache.get(CLOSED_CATEGORY_ID);
+      if (!closedCategory)
+        return interaction.reply({ content: "❌ Closed category missing.", ephemeral: true });
+
+      await interaction.channel.setParent(closedCategory.id);
+      await interaction.channel.setName(`closed-${interaction.channel.name}`);
+
+      return interaction.reply({ content: "✅ Ticket Closed", ephemeral: true });
+    }
   }
 
   // ===== SELECT MENU =====
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === "select_game") {
+
+      if (interaction.values[0] === "wow")
+        return createShopTicket(interaction, "WoW Service", "20$");
 
       if (interaction.values[0] === "ark") {
 
@@ -163,10 +239,6 @@ client.on('interactionCreate', async (interaction) => {
           components: [arkMenu]
         });
       }
-
-      if (interaction.values[0] === "wow") {
-        return createShopTicket(interaction, "WoW Service", "20$");
-      }
     }
 
     if (interaction.customId === "select_ark") {
@@ -179,99 +251,15 @@ client.on('interactionCreate', async (interaction) => {
       return createShopTicket(interaction, name, "15$");
     }
   }
-
-  // ===== COLLECT =====
-  if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
-
-    const id = interaction.customId.split("_")[1];
-    const data = orders[id];
-    if (!data) return;
-
-    data.seller = interaction.user.id;
-
-    const originalMsg = await interaction.channel.messages.fetch(data.messageId);
-
-    const updatedEmbed = new EmbedBuilder(originalMsg.embeds[0])
-      .setDescription(
-`🔸 ~~${data.service}~~
-💰 ~~${data.price}~~
-🔑 ~~${data.code}~~
-
-🔹 **Order:** #${id}
-🔹 **Seller:** <@${data.seller}>`
-      );
-
-    const newRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`delivered_${id}`)
-        .setLabel("Delivered")
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId(`manage_${id}`)
-        .setLabel("Manage")
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-    await originalMsg.edit({ embeds: [updatedEmbed], components: [newRow] });
-
-    const category = interaction.guild.channels.cache.find(
-      c => c.name === TICKET_CATEGORY_NAME
-    );
-
-    const ticket = await interaction.guild.channels.create({
-      name: `ticket-${id}`,
-      parent: category.id,
-      permissionOverwrites: [
-        { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-        { id: data.client, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-        { id: data.seller, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
-      ]
-    });
-
-    const closeRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`close_${id}`)
-        .setLabel("Close Ticket")
-        .setStyle(ButtonStyle.Danger)
-    );
-
-    await ticket.send({
-      content:
-`🎟️ Order #${id}
-
-👤 Client: <@${data.client}>
-🛒 Seller: <@${data.seller}>
-
-📦 ${data.service}
-💰 ${data.price}
-🔑 ${data.code}`,
-      components: [closeRow]
-    });
-
-    await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
-  }
-
-  // ===== CLOSE =====
-  if (interaction.isButton() && interaction.customId.startsWith("close_")) {
-
-    const closedCategory = interaction.guild.channels.cache.find(
-      c => c.name === CLOSED_CATEGORY_NAME
-    );
-
-    await interaction.channel.setParent(closedCategory.id);
-    await interaction.channel.setName(`closed-${interaction.channel.name}`);
-
-    await interaction.reply({ content: "✅ Ticket Closed", ephemeral: true });
-  }
 });
 
 async function createShopTicket(interaction, service, price) {
 
   orderCounter++;
 
-  const category = interaction.guild.channels.cache.find(
-    c => c.name === TICKET_CATEGORY_NAME
-  );
+  const category = interaction.guild.channels.cache.get(TICKET_CATEGORY_ID);
+  if (!category)
+    return interaction.reply({ content: "❌ Ticket category missing.", ephemeral: true });
 
   const ticket = await interaction.guild.channels.create({
     name: `ticket-${orderCounter}`,
@@ -299,15 +287,7 @@ async function createShopTicket(interaction, service, price) {
     components: [closeRow]
   });
 
-  await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
+  return interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
 }
 
 client.login(process.env.TOKEN);
-
-
-
-
-
-
-
-
