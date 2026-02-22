@@ -64,21 +64,28 @@ client.on('messageCreate', async (message) => {
 
     const embed = new EmbedBuilder()
       .setColor("#2b2d31")
-      .setTitle("📢 New Order")
       .setDescription(
-`🔸 **Details:** ${service}
+`📢 **New Order** <@&${GAMERS_ROLE_ID}>
+
+━━━━━━━━━━━━━━━━━━
+
+🔸 **Details:**
+${service}
+
 💰 **Price:** ${price}
 🔑 **Code:** ${code}
 
-🔹 **Order:** #${orderCounter}
-🔹 **Seller:** None`
+🔹 **Order:** \`#${orderCounter}\`
+🔹 **Seller:** None
+
+━━━━━━━━━━━━━━━━━━`
       )
       .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`collect_${orderCounter}`)
-        .setLabel("Collect")
+        .setLabel("Order Now")
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId(`manage_${orderCounter}`)
@@ -87,7 +94,6 @@ client.on('messageCreate', async (message) => {
     );
 
     const msg = await message.channel.send({
-      content: `<@&${GAMERS_ROLE_ID}>`,
       embeds: [embed],
       components: [row]
     });
@@ -174,7 +180,7 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  // ===== COLLECT =====
+  // ===== ORDER NOW =====
   if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
 
     const id = interaction.customId.split("_")[1];
@@ -182,31 +188,6 @@ client.on('interactionCreate', async (interaction) => {
     if (!data) return;
 
     data.seller = interaction.user.id;
-
-    const originalMsg = await interaction.channel.messages.fetch(data.messageId);
-
-    const updatedEmbed = new EmbedBuilder(originalMsg.embeds[0])
-      .setDescription(
-`🔸 ~~${data.service}~~
-💰 ~~${data.price}~~
-🔑 ~~${data.code}~~
-
-🔹 **Order:** #${id}
-🔹 **Seller:** <@${data.seller}>`
-      );
-
-    const newRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`delivered_${id}`)
-        .setLabel("Delivered")
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId(`manage_${id}`)
-        .setLabel("Manage")
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-    await originalMsg.edit({ embeds: [updatedEmbed], components: [newRow] });
 
     const category = interaction.guild.channels.cache.find(
       c => c.name === TICKET_CATEGORY_NAME
@@ -283,15 +264,14 @@ async function createShopTicket(interaction, service, price) {
       .setStyle(ButtonStyle.Danger)
   );
 
-  await ticket.send({
-    content:
+  await ticket.send(
 `🛍️ Shop Order
 
 👤 Client: <@${interaction.user.id}>
 📦 ${service}
 💰 ${price}`,
-    components: [closeRow]
-  });
+  { components: [closeRow] }
+);
 
   await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
 }
