@@ -38,62 +38,74 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  if (message.content.startsWith("!order")) {
+if (message.content.startsWith("!order")) {
 
-    if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
-      return message.reply("❌ انت مش معاك صلاحية.");
+  if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
+    return message.reply("❌ انت مش معاك صلاحية.");
 
-    const args = message.content.slice(7).split("|");
-    if (args.length < 3)
-      return message.reply("❌ استخدم:\n!order name | price$ | code");
+  const args = message.content.slice(7).split("|");
+  if (args.length < 3)
+    return message.reply("❌ استخدم:\n!order name | price$ | code");
 
-    const service = args[0].trim();
-    const price = args[1].trim();
-    const code = args[2].trim();
+  const service = args[0].trim();
+  const price = args[1].trim();
+  const code = args[2].trim();
 
-    orderCounter++;
+  orderCounter++;
 
-    orders[orderCounter] = {
-      service,
-      price,
-      code,
-      client: message.author.id,
-      seller: null,
-      messageId: null
-    };
+  orders[orderCounter] = {
+    service,
+    price,
+    code,
+    client: message.author.id,
+    seller: null,
+    messageId: null
+  };
 
-    const embed = new EmbedBuilder()
-      .setColor("#2b2d31")
-      .setTitle("📢 New Order")
-      .setDescription(
-`🔸 **Details:** ${service}
+  // 👇 يخلي الاوردر ينزل في روم معينة
+  const ordersChannel = message.guild.channels.cache.find(
+    c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
+  );
+
+  if (!ordersChannel)return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
+
+  const embed = new EmbedBuilder()
+    .setColor("#2b2d31")
+    .setDescription(
+`📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
+
+━━━━━━━━━━━━━━━━━━
+
+🔸 **Details:** ${service}
+
 💰 **Price:** ${price}
 🔑 **Code:** ${code}
 
-🔹 **Order:** #${orderCounter}
-🔹 **Seller:** None`
-      )
-      .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
+💠 **Order:** #${orderCounter}
+👤 **Seller:** None
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`collect_${orderCounter}`)
-        .setLabel("Collect")
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`manage_${orderCounter}`)
-        .setLabel("Manage")
-        .setStyle(ButtonStyle.Secondary)
-    );
+━━━━━━━━━━━━━━━━━━`
+    )
+    .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
 
-    const msg = await message.channel.send({
-      content: `<@&${GAMERS_ROLE_ID}>`,
-      embeds: [embed],
-      components: [row]
-    });
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`collect_${orderCounter}`)
+      .setLabel("Collect")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId(`manage_${orderCounter}`)
+      .setLabel("Manage")
+      .setStyle(ButtonStyle.Secondary)
+  );
 
-    orders[orderCounter].messageId = msg.id;
-  }
+  const msg = await ordersChannel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  orders[orderCounter].messageId = msg.id;
+}
 
   if (message.content === "!store") {
 
@@ -297,3 +309,4 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
