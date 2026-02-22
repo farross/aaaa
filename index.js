@@ -81,7 +81,6 @@ if (message.content.startsWith("!order")) {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
     )
 .setImage('https://i.thteam.me/f9E5xsy-aX.png') // الصورة العريضة (استبدل بالرابط المناسب)
-      .setTimestamp(https://cdn.discordapp.com/attachments/1474602944983990290/1475225250810827024/Vita_Spray_Blueprint.webp?ex=699cb614&is=699b6494&hm=483e1899e14a2a3b3497f6fb1f4c33e591c4c895a8331572a6d6831335fa8a74&);
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -304,6 +303,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
