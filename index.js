@@ -70,32 +70,39 @@ client.on('messageCreate', async (message) => {
 
     if (!ordersChannel) return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
 
-    // 🎯 الإيمبد مع التنسيق حسب تصميم Baba Store
+    // 🎯 الإيمبد زي الصورة بالضبط
     const embed = new EmbedBuilder()
-      .setColor('#b80f0a') // لون أحمر
-      .setTitle('BOOSTIFY')
-      .setDescription('Order Details')
-      .addFields(
-        { name: '\u200B', value: service }, // تفاصيل الطلب
-        { name: '💰 Price', value: price, inline: true },
-        { name: '🆔 Order ID', value: String(orderCounter), inline: true },
-        { name: '👤 Assigned Seller', value: 'None', inline: true }
+      .setColor("#000000")
+      .setAuthor({
+        name: "BOOSTFIY",
+        iconURL: "https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&"
+      })
+      .setDescription(
+`📢 **NEW ORDER** <@&${GAMERS_ROLE_ID}>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔸 Details: **${service}**
+
+💠 Order: **${orderCounter}**
+👤 Seller: **None**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
       )
-      .setThumbnail('https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&')
-      .setFooter({ text: '© BOOSTIFY' })
+      .setThumbnail("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&")
+      .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&")
+      .setFooter({
+        text: "BOOSTFIY",
+        iconURL: "https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&"
+      })
       .setTimestamp();
 
-    // أزرار تشبه Baba Store
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`order_completed_${orderCounter}`)
-        .setLabel('🧱 Order Completed')
-        .setStyle(ButtonStyle.Danger),
-
+        .setCustomId(`collect_${orderCounter}`)
+        .setLabel("Collect")
+        .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
-        .setCustomId(`staff_access_${orderCounter}`)
-        .setLabel('🛠️ Staff Access')
-        .setStyle(ButtonStyle.Primary)
+        .setCustomId(`manage_${orderCounter}`)
+        .setLabel("Manage")
+        .setStyle(ButtonStyle.Secondary)
     );
 
     const msg = await ordersChannel.send({
@@ -187,10 +194,10 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  // ===== ORDER COMPLETED =====
-  if (interaction.isButton() && interaction.customId.startsWith("order_completed_")) {
+  // ===== COLLECT =====
+  if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
 
-    const id = interaction.customId.split("_")[2];
+    const id = interaction.customId.split("_")[1];
     const data = orders[id];
     if (!data) return;
 
@@ -198,35 +205,30 @@ client.on('interactionCreate', async (interaction) => {
 
     const originalMsg = await interaction.channel.messages.fetch(data.messageId);
 
-    const updatedEmbed = new EmbedBuilder()
-      .setColor('#b80f0a')
-      .setTitle('BOOSTIFY')
-      .setDescription('Order Details')
-      .addFields(
-        { name: '\u200B', value: data.service },
-        { name: '💰 Price', value: data.price, inline: true },
-        { name: '🆔 Order ID', value: String(id), inline: true },
-        { name: '👤 Assigned Seller', value: `<@${data.seller}>`, inline: true }
-      )
-      .setThumbnail('https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&')
-      .setFooter({ text: '© BOOSTIFY' })
-      .setTimestamp();
+    const updatedEmbed = new EmbedBuilder(originalMsg.embeds[0])
+      .setDescription(
+`📢 **NEW ORDER** <@&${GAMERS_ROLE_ID}>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔸 Details: **${data.service}**
 
-    // أزرار بعد إكمال الطلب
+💠 Order: **${id}**
+👤 Seller: **<@${data.seller}>**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+      );
+
     const newRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`delivered_${id}`)
-        .setLabel('🧱 Delivered')
-        .setStyle(ButtonStyle.Success),
+        .setLabel("Delivered")
+        .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
-        .setCustomId(`staff_access_${id}`)
-        .setLabel('🛠️ Staff Access')
-        .setStyle(ButtonStyle.Primary)
+        .setCustomId(`manage_${id}`)
+        .setLabel("Manage")
+        .setStyle(ButtonStyle.Secondary)
     );
 
     await originalMsg.edit({ embeds: [updatedEmbed], components: [newRow] });
 
-    // إنشاء تذكرة وربط الصلاحيات كما في المثال الأصلي
     const category = interaction.guild.channels.cache.find(
       c => c.name === TICKET_CATEGORY_NAME
     );
