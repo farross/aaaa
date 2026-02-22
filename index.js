@@ -44,12 +44,7 @@ if (message.content.startsWith("!order")) {
     return message.reply("❌ انت مش معاك صلاحية.");
 
   const args = message.content.slice(7).split("|");
-  if (args.length < 3)
-    return message.reply("❌ استخدم:\n!order name | price$ | code");
 
-  const service = args[0].trim();
-  const price = args[1].trim();
-  const code = args[2].trim();
 
   orderCounter++;
 
@@ -303,6 +298,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
