@@ -63,7 +63,7 @@ client.on('messageCreate', async (message) => {
       messageId: null
     };
 
-    const ordersChannel = message.guild.channels.cache.get(ORDERS_CHANNEL_ID);
+    const ordersChannel = message.guild.channels.cache.get(〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦);
     if (!ordersChannel)
       return message.reply("❌ روم الأوردرات مش موجود.");
 
@@ -291,4 +291,5 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
