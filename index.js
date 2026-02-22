@@ -33,8 +33,6 @@ client.once('ready', () => {
   console.log("BOOSTFIY Ready 👑");
 });
 
-// ======================= MESSAGE =======================
-
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
@@ -64,28 +62,21 @@ client.on('messageCreate', async (message) => {
 
     const embed = new EmbedBuilder()
       .setColor("#2b2d31")
+      .setTitle("📢 𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑")
       .setDescription(
-`📢 **New Order** <@&${GAMERS_ROLE_ID}>
+`🔸 **𝐃𝐄𝐓𝐀𝐈𝐋𝐒:** ${service}
+💰 **𝐏𝐑𝐈𝐂𝐄:** ${price}
+🔑 **𝐂𝐎𝐃𝐄:** ${code}
 
-━━━━━━━━━━━━━━━━━━
-
-🔸 **Details:**
-${service}
-
-💰 **Price:** ${price}
-🔑 **Code:** ${code}
-
-🔹 **Order:** \`#${orderCounter}\`
-🔹 **Seller:** None
-
-━━━━━━━━━━━━━━━━━━`
+🔹 **𝐎𝐑𝐃𝐄𝐑:** #${orderCounter}
+🔹 **𝐒𝐄𝐋𝐋𝐄𝐑:** None`
       )
       .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`collect_${orderCounter}`)
-        .setLabel("Order Now")
+        .setLabel("Collect")
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId(`manage_${orderCounter}`)
@@ -94,6 +85,7 @@ ${service}
     );
 
     const msg = await message.channel.send({
+      content: `<@&${GAMERS_ROLE_ID}>`,
       embeds: [embed],
       components: [row]
     });
@@ -117,11 +109,10 @@ ${service}
   }
 });
 
-// ======================= INTERACTIONS =======================
+// باقي الكود زي ما هو بدون أي تغيير 👇👇👇
 
 client.on('interactionCreate', async (interaction) => {
 
-  // ===== BUY =====
   if (interaction.isButton() && interaction.customId === "buy_start") {
 
     const menu = new ActionRowBuilder().addComponents(
@@ -141,7 +132,6 @@ client.on('interactionCreate', async (interaction) => {
     });
   }
 
-  // ===== SELECT MENU =====
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === "select_game") {
@@ -180,7 +170,6 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  // ===== ORDER NOW =====
   if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
 
     const id = interaction.customId.split("_")[1];
@@ -188,6 +177,20 @@ client.on('interactionCreate', async (interaction) => {
     if (!data) return;
 
     data.seller = interaction.user.id;
+
+    const originalMsg = await interaction.channel.messages.fetch(data.messageId);
+
+    const updatedEmbed = new EmbedBuilder(originalMsg.embeds[0])
+      .setDescription(
+`🔸 ~~${data.service}~~
+💰 ~~${data.price}~~
+🔑 ~~${data.code}~~
+
+🔹 **𝐎𝐑𝐃𝐄𝐑:** #${id}
+🔹 **𝐒𝐄𝐋𝐋𝐄𝐑:** <@${data.seller}>`
+      );
+
+    await originalMsg.edit({ embeds: [updatedEmbed] });
 
     const category = interaction.guild.channels.cache.find(
       c => c.name === TICKET_CATEGORY_NAME
@@ -212,10 +215,10 @@ client.on('interactionCreate', async (interaction) => {
 
     await ticket.send({
       content:
-`🎟️ Order #${id}
+`🎟️ 𝐎𝐑𝐃𝐄𝐑 #${id}
 
-👤 Client: <@${data.client}>
-🛒 Seller: <@${data.seller}>
+👤 𝐂𝐋𝐈𝐄𝐍𝐓: <@${data.client}>
+🛒 𝐒𝐄𝐋𝐋𝐄𝐑: <@${data.seller}>
 
 📦 ${data.service}
 💰 ${data.price}
@@ -226,7 +229,6 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
   }
 
-  // ===== CLOSE =====
   if (interaction.isButton() && interaction.customId.startsWith("close_")) {
 
     const closedCategory = interaction.guild.channels.cache.find(
@@ -239,41 +241,5 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.reply({ content: "✅ Ticket Closed", ephemeral: true });
   }
 });
-
-async function createShopTicket(interaction, service, price) {
-
-  orderCounter++;
-
-  const category = interaction.guild.channels.cache.find(
-    c => c.name === TICKET_CATEGORY_NAME
-  );
-
-  const ticket = await interaction.guild.channels.create({
-    name: `ticket-${orderCounter}`,
-    parent: category.id,
-    permissionOverwrites: [
-      { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-      { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
-    ]
-  });
-
-  const closeRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`close_${orderCounter}`)
-      .setLabel("Close Ticket")
-      .setStyle(ButtonStyle.Danger)
-  );
-
-  await ticket.send(
-`🛍️ Shop Order
-
-👤 Client: <@${interaction.user.id}>
-📦 ${service}
-💰 ${price}`,
-  { components: [closeRow] }
-);
-
-  await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
-}
 
 client.login(process.env.TOKEN);
