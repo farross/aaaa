@@ -74,9 +74,9 @@ if (message.content.startsWith("!order")) {
     .setDescription(
 `📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ
 
-🔸 Details: **${service}**aklsghkahgkjxjkzbxgjkkjhaskjdgsdgsdhsdhfsdh,sjdghkjsdgksdjgkjsdgjkdsbgkjsdhgjkd
+🔸 Details: **${service}**
 
 💰 Price: **${price}**
 🔑 Code: **${code}**
@@ -84,7 +84,7 @@ if (message.content.startsWith("!order")) {
 💠 Order: **#${orderCounter}**
 👤 Seller: **None**
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ`
     )
     .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474975123952894022/888.jpg?ex=699bcd21&is=699a7ba1&hm=a794cb755d5039381bdb8a6f44909d354980f2014ff9c4405cc7fd1aaa80da6b&");
 
@@ -309,6 +309,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
