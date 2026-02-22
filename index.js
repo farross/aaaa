@@ -99,8 +99,8 @@ client.on('messageCreate', async (message) => {
       inline: false
     }
   )
-  .setThumbnail("https://cdn-icons-png.flaticon.com/512/3135/3135715.png")
-  .setImage("PUT_YOUR_BANNER_LINK")
+  .setThumbnail("https://i.thteam.me/f9E5xsy-aX.png")
+  .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699cb0fb&is=699b5f7b&hm=fcf7cf0c2aa44ad234ebed8605eb2a112bfe679978625bdfd8cdd06316f3d298&")
   .setFooter({
     text: "BOOSTFIY © All Rights Reserved",
   })
@@ -319,6 +319,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
