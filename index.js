@@ -24,9 +24,9 @@ const client = new Client({
 const OWNER_ROLE_NAME = "ᴼᵂᴺᴱᴿ";
 const GAMERS_ROLE_ID = "1474625885062697161";
 
-const ORDERS_CHANNEL_ID = "PUT_ORDERS_CHANNEL_ID";
-const TICKET_CATEGORY_ID = "PUT_TICKET_CATEGORY_ID";
-const CLOSED_CATEGORY_ID = "PUT_CLOSED_CATEGORY_ID";
+const ORDERS_CHANNEL_ID = "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦";
+const TICKET_CATEGORY_ID = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
+const CLOSED_CATEGORY_ID = "𝐂𝐋𝐎𝐒𝐄𝐃";
 
 let orderCounter = 3600;
 let orders = {};
@@ -291,3 +291,4 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
