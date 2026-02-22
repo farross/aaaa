@@ -73,7 +73,7 @@ client.on('messageCreate', async (message) => {
   .setColor("#2F3136")
   .setAuthor({
     name: "BOOSTFIY STORE",
-    iconURL: message.guild.iconURL("https://imgur.com/aRB6qJZ")
+    iconURL: message.guild.iconURL("https://cdn.discordapp.com/attachments/1474602944983990290/1475266521210294363/Vita_Spray_Blueprint.jpg?ex=699cdc83&is=699b8b03&hm=6a8d0fb5d909490d90b6975542ba66e0eff96dde64d04ad632ac5d0d9192b2d6&")
   })
   .setTitle("📦 Order Created")
   .setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -95,12 +95,12 @@ client.on('messageCreate', async (message) => {
       inline: false
     }
   )
-  .setThumbnail("https://imgur.com/aRB6qJZ")
-  .setImage("https://imgur.com/aRB6qJZ")
+  .setThumbnail("https://cdn.discordapp.com/attachments/1474602944983990290/1475266521210294363/Vita_Spray_Blueprint.jpg?ex=699cdc83&is=699b8b03&hm=6a8d0fb5d909490d90b6975542ba66e0eff96dde64d04ad632ac5d0d9192b2d6&")
+  .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1475238876401373294/Black_Geometric_Minimalist_Gaming_Logo_-_1_-_Edited.png?ex=699cc2c4&is=699b7144&hm=1c329497afc47240b1ba17aed7ee206b1ca61a226b45841f80187423fd4afbd2&")
   .setFooter({
     text: "BOOSTFIY © All Rights Reserved",
   })
-  .setTimestamp();
+  .setTimestamp("https://cdn.discordapp.com/attachments/976992409219133530/1475238876401373294/Black_Geometric_Minimalist_Gaming_Logo_-_1_-_Edited.png?ex=699cc2c4&is=699b7144&hm=1c329497afc47240b1ba17aed7ee206b1ca61a226b45841f80187423fd4afbd2&");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -315,6 +315,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
