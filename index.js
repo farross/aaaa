@@ -38,15 +38,15 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // ===== !ORDER COMMAND =====
-  if (message.content.startsWith("!order")) {
+  // ===== iORDER COMMAND =====
+  if (message.content.startsWith("iorder")) {
 
     if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
       return message.reply("❌ انت مش معاك صلاحية.");
 
     const args = message.content.slice(7).split("|");
     if (args.length < 3)
-      return message.reply("❌ استخدم:\n!order name | price | code");
+      return message.reply("❌ استخدم:\niorder name | price | code");
 
     const service = args[0].trim();
     const price = args[1].trim();
