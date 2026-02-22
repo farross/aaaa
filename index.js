@@ -69,72 +69,20 @@ client.on('messageCreate', async (message) => {
 
     if (!ordersChannel) return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
 
-    // 🎯 الإيمبد الكبير والمفصل
+    // 🎯 الإيمبد زي الصورة بالضبط
     const embed = new EmbedBuilder()
       .setColor("#2b2d31")
-      .setTitle("📢 𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑 𝐑𝐄𝐂𝐄𝐈𝐕𝐄𝐃 🚀")
-      .setDescription(`
-🆕 **طلب جديد وصل!** <@&${GAMERS_ROLE_ID}>
+      .setTitle("📢 NEW ORDER")
+      .setDescription(
+`📢 **NEW ORDER** <@&${GAMERS_ROLE_ID}>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔸 Details: **${service}**
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔸 **معلومات الطلب الأساسية:**
-📝 الخدمة: **${service}**
-💰 السعر: **${price}**
-🔑 الكود: **${code}**
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 **تفاصيل الطلب:**
-🆔 رقم الطلب: **#${orderCounter}**
-👤 البائع: **في انتظار التعيين**
-⏰ الوقت: <t:${Math.floor(Date.now() / 1000)}:R>
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      `)
-      .addFields(
-        {
-          name: "🔍 معلومات تفصيلية",
-          value: `\`\`\`\nالخدمة: ${service}\nالسعر: ${price}\nالكود: ${code}\nالطلب #: ${orderCounter}\n\`\`\``,
-          inline: true
-        },
-        {
-          name: "👤 حالة البائع",
-          value: `\`\`\`\nالحالة: ⏳ بانتظار\nالاسم: لم يُعين بعد\nمعرف: None\n\`\`\``,
-          inline: true
-        },
-        {
-          name: "📋 إرشادات للبائعين",
-          value: `> 📌 اضغط **Collect** لأخذ الطلب\n> 📌 لا تبدأ العمل قبل التأكيد\n> 📌 راجع تفاصيل الكود جيداً\n> 📌 تواصل مع العميل فوراً`,
-          inline: false
-        },
-        {
-          name: "⚡ إجراءات سريعة",
-          value: `> ✅ **Collect** - خذ الطلب وابدأ\n> 📝 **Manage** - إدارة الطلب\n> ⏰ **الوقت:** <t:${Math.floor(Date.now() / 1000)}:R>`,
-          inline: false
-        },
-        {
-          name: "📞 دعم فني",
-          value: `> 💬 **للاستفسارات:** تواصل مع الإدارة\n> 📧 **الإيميل:** support@boostfiy.com\n> 🔗 **الديسكورد:** discord.gg/boostfiy`,
-          inline: true
-        },
-        {
-          name: "📖 شروط الخدمة",
-          value: `> 📌 قراءة الشروط قبل البدء\n> 📌 الالتزام بالمواعيد\n> 📌 جودة العمل المطلوبة\n> 📌 مراجعة الطلب قبل التسليم`,
-          inline: true
-        }
+💠 Order: **${orderCounter}**
+👤 Seller: **None**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
       )
-      .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&")
-      .setThumbnail("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&")
-      .setAuthor({
-        name: "BOOSTFIY System",
-        iconURL: "https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&"
-      })
-      .setFooter({
-        text: "نظام إدارة الطلبات | BOOSTFIY",
-        iconURL: "https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&"
-      })
-      .setTimestamp();
+      .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -247,12 +195,13 @@ client.on('interactionCreate', async (interaction) => {
 
     const updatedEmbed = new EmbedBuilder(originalMsg.embeds[0])
       .setDescription(
-`🔸 ~~${data.service}~~
-💰 ~~${data.price}~~
-🔑 ~~${data.code}~~
+`📢 **NEW ORDER** <@&${GAMERS_ROLE_ID}>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔸 Details: **${data.service}**
 
-🔹 **Order:** #${id}
-🔹 **Seller:** <@${data.seller}>`
+💠 Order: **${id}**
+👤 Seller: **<@${data.seller}>**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
       );
 
     const newRow = new ActionRowBuilder().addComponents(
