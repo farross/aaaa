@@ -55,4 +55,5 @@ client.on('interactionCreate', async interaction => {
 });
 
 // استبدل التوكن بتوكن بوتك
-client.login('YOUR_BOT_TOKEN');
+client.login('process.env.TOKEN');
+
