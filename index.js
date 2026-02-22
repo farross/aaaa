@@ -38,14 +38,14 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-if (message.content.startsWith("!order")) {
+if (message.content.trim() === "!order") {
 
   if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
     return message.reply("❌ انت مش معاك صلاحية.");
 
-  const service = args[0].trim();
-  const price = args[1].trim();
-  const code = args[2].trim();
+  const service = "Key Testing";
+  const price = "60$";
+  const code = "21";
 
   orderCounter++;
 
@@ -299,6 +299,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
