@@ -44,7 +44,12 @@ if (message.content.startsWith("!order")) {
     return message.reply("❌ انت مش معاك صلاحية.");
 
   const args = message.content.slice(7).split("|");
+  if (args.length < 3)
+    return message.reply("❌ استخدم:\n!order name | price$ | code");
 
+  const service = args[0].trim();
+  const price = args[1].trim();
+  const code = args[2].trim();
 
   orderCounter++;
 
@@ -68,14 +73,14 @@ if (message.content.startsWith("!order")) {
     .setColor("#2b2d31")
     .setDescription(
 `📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
-ـــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ
-🔸 # Details: **${service}**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔸 Details: **${service}**
 
 💠 Order: **#${orderCounter}**
 👤 Seller: **None**
-ـــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
     )
-    .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474984120680579072/zby.png?ex=699bd582&is=699a8402&hm=646e8fda83832d79517e336abf8a273ee11164478f5ec88c5c014535f59fd1fa&");
+    .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474984730335252532/zby_2.png?ex=699bd613&is=699a8493&hm=fa26c4a1a82579ce146dfc1f86b38f0d96cf682eac26dc8d96ed63095650db0a&");
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -298,20 +303,6 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
