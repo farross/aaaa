@@ -38,68 +38,122 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-if (message.content.startsWith("!order")) {
+  if (message.content.startsWith("!order")) {
 
-  if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
-    return message.reply("❌ انت مش معاك صلاحية.");
+    if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
+      return message.reply("❌ انت مش معاك صلاحية.");
 
-  const args = message.content.slice(7).split("|");
-  if (args.length < 3)
-    return message.reply("❌ استخدم:\n!order name | price$ | code");
+    const args = message.content.slice(7).split("|");
+    if (args.length < 3)
+      return message.reply("❌ استخدم:\n!order name | price$ | code");
 
-  const service = args[0].trim();
-  const price = args[1].trim();
-  const code = args[2].trim();
+    const service = args[0].trim();
+    const price = args[1].trim();
+    const code = args[2].trim();
 
-  orderCounter++;
+    orderCounter++;
 
-  orders[orderCounter] = {
-    service,
-    price,
-    code,
-    client: message.author.id,
-    seller: null,
-    messageId: null
-  };
+    orders[orderCounter] = {
+      service,
+      price,
+      code,
+      client: message.author.id,
+      seller: null,
+      messageId: null
+    };
 
-  // 👇 يخلي الاوردر ينزل في روم معينة
-  const ordersChannel = message.guild.channels.cache.find(
-    c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
-  );
+    // 👇 يخلي الاوردر ينزل في روم معينة
+    const ordersChannel = message.guild.channels.cache.find(
+      c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
+    );
 
-  if (!ordersChannel)return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
+    if (!ordersChannel) return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
 
-  const embed = new EmbedBuilder()
-    .setColor("#2b2d31")
-    .setDescription(
-`📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔸 Details: **${service}**
+    // 🎯 الإيمبد الكبير والمفصل
+    const embed = new EmbedBuilder()
+      .setColor("#2b2d31")
+      .setTitle("📢 𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑 𝐑𝐄𝐂𝐄𝐈𝐕𝐄𝐃 🚀")
+      .setDescription(`
+🆕 **طلب جديد وصل!** <@&${GAMERS_ROLE_ID}>
 
-💠 Order: **${orderCounter}**
-👤 Seller: **None**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
-    )
-    .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&");
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`collect_${orderCounter}`)
-      .setLabel("Collect")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId(`manage_${orderCounter}`)
-      .setLabel("Manage")
-      .setStyle(ButtonStyle.Secondary)
-  );
+🔸 **معلومات الطلب الأساسية:**
+📝 الخدمة: **${service}**
+💰 السعر: **${price}**
+🔑 الكود: **${code}**
 
-  const msg = await ordersChannel.send({
-    embeds: [embed],
-    components: [row]
-  });
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  orders[orderCounter].messageId = msg.id;
-}
+📊 **تفاصيل الطلب:**
+🆔 رقم الطلب: **#${orderCounter}**
+👤 البائع: **في انتظار التعيين**
+⏰ الوقت: <t:${Math.floor(Date.now() / 1000)}:R>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      `)
+      .addFields(
+        {
+          name: "🔍 معلومات تفصيلية",
+          value: `\`\`\`\nالخدمة: ${service}\nالسعر: ${price}\nالكود: ${code}\nالطلب #: ${orderCounter}\n\`\`\``,
+          inline: true
+        },
+        {
+          name: "👤 حالة البائع",
+          value: `\`\`\`\nالحالة: ⏳ بانتظار\nالاسم: لم يُعين بعد\nمعرف: None\n\`\`\``,
+          inline: true
+        },
+        {
+          name: "📋 إرشادات للبائعين",
+          value: `> 📌 اضغط **Collect** لأخذ الطلب\n> 📌 لا تبدأ العمل قبل التأكيد\n> 📌 راجع تفاصيل الكود جيداً\n> 📌 تواصل مع العميل فوراً`,
+          inline: false
+        },
+        {
+          name: "⚡ إجراءات سريعة",
+          value: `> ✅ **Collect** - خذ الطلب وابدأ\n> 📝 **Manage** - إدارة الطلب\n> ⏰ **الوقت:** <t:${Math.floor(Date.now() / 1000)}:R>`,
+          inline: false
+        },
+        {
+          name: "📞 دعم فني",
+          value: `> 💬 **للاستفسارات:** تواصل مع الإدارة\n> 📧 **الإيميل:** support@boostfiy.com\n> 🔗 **الديسكورد:** discord.gg/boostfiy`,
+          inline: true
+        },
+        {
+          name: "📖 شروط الخدمة",
+          value: `> 📌 قراءة الشروط قبل البدء\n> 📌 الالتزام بالمواعيد\n> 📌 جودة العمل المطلوبة\n> 📌 مراجعة الطلب قبل التسليم`,
+          inline: true
+        }
+      )
+      .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&")
+      .setThumbnail("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&")
+      .setAuthor({
+        name: "BOOSTFIY System",
+        iconURL: "https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&"
+      })
+      .setFooter({
+        text: "نظام إدارة الطلبات | BOOSTFIY",
+        iconURL: "https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&"
+      })
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`collect_${orderCounter}`)
+        .setLabel("Collect")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`manage_${orderCounter}`)
+        .setLabel("Manage")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    const msg = await ordersChannel.send({
+      embeds: [embed],
+      components: [row]
+    });
+
+    orders[orderCounter].messageId = msg.id;
+  }
 
   if (message.content === "!store") {
 
@@ -303,9 +357,3 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
-
-
-
-
-
-
