@@ -70,7 +70,7 @@ if (message.content.startsWith("!order")) {
   if (!ordersChannel)return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
 
   const embed = new EmbedBuilder()
-    .setColor("#2b2d31")
+    .setColor("#2F3136")
     .setDescription(
 `📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -80,8 +80,8 @@ if (message.content.startsWith("!order")) {
 👤 Seller: **None**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
     )
-    .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&");
-
+    .setImage("https://i.thteam.me/f9E5xsy-aX.png");
+.setTimestamp(https://cdn.discordapp.com/attachments/1474602944983990290/1475225250810827024/Vita_Spray_Blueprint.webp?ex=699cb614&is=699b6494&hm=483e1899e14a2a3b3497f6fb1f4c33e591c4c895a8331572a6d6831335fa8a74&);
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`collect_${orderCounter}`)
@@ -303,6 +303,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
