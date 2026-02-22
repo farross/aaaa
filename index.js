@@ -83,11 +83,7 @@ client.on('messageCreate', async (message) => {
       value: `\`\`\`${service}\`\`\``,
       inline: false
     },
-    {
-      name: "💰 Price",
-      value: `**${price}**`,
-      inline: true
-    },
+    
     {
       name: "🆔 Order ID",
       value: `#${orderCounter}`,
@@ -319,6 +315,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
