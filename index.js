@@ -134,30 +134,32 @@ client.on('interactionCreate', async (interaction) => {
 
   if (interaction.isStringSelectMenu()) {
 
-    if (interaction.customId === "select_game") {
+ if (interaction.customId === "select_game") {
 
-      if (interaction.values[0] === "ark") {
+  await interaction.deferUpdate(); // 🔥 مهم جداً
 
-        const arkMenu = new ActionRowBuilder().addComponents(
-          new StringSelectMenuBuilder()
-            .setCustomId("select_ark")
-            .setPlaceholder("Choose Category")
-            .addOptions([
-              { label: "Items", value: "items" },
-              { label: "Weapons", value: "weapons" }
-            ])
-        );
+  if (interaction.values[0] === "ark") {
 
-        return interaction.update({
-          content: "Choose ARK Category:",
-          components: [arkMenu]
-        });
-      }
+    const arkMenu = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("select_ark")
+        .setPlaceholder("Choose Category")
+        .addOptions([
+          { label: "Items", value: "items" },
+          { label: "Weapons", value: "weapons" }
+        ])
+    );
 
-      if (interaction.values[0] === "wow") {
-        return createShopTicket(interaction, "WoW Service", "20$");
-      }
-    }
+    return interaction.editReply({
+      content: "Choose ARK Category:",
+      components: [arkMenu]
+    });
+  }
+
+  if (interaction.values[0] === "wow") {
+    return createShopTicket(interaction, "WoW Service", "20$");
+  }
+}
 
     if (interaction.customId === "select_ark") {
 
@@ -243,3 +245,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.TOKEN);
+
