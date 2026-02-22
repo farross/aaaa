@@ -67,16 +67,44 @@ client.on('messageCreate', async (message) => {
     if (!ordersChannel)
       return message.reply("❌ روم الأوردرات مش موجود.");
 
+    // فراغغغغغغغغغغغغغغغغغغغغغغغ
+    
     const embed = new EmbedBuilder()
-      .setColor("#2F3136")
-      .setDescription(
-`📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
-━━━━━━━━━━━━━━━━━━━━
-🔸 Details: **${service}**
-💠 Order: **${orderCounter}**
-👤 Seller: **None**
-━━━━━━━━━━━━━━━━━━━━`
-      );
+  .setColor("#2F3136")
+  .setAuthor({
+    name: "BOOSTFIY STORE",
+    iconURL: message.guild.iconURL()
+  })
+  .setTitle("📦 Order Created")
+  .setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+  .addFields(
+    {
+      name: "📄 Order Details",
+      value: `\`\`\`${service}\`\`\``,
+      inline: false
+    },
+    {
+      name: "💰 Price",
+      value: `**${price}**`,
+      inline: true
+    },
+    {
+      name: "🆔 Order ID",
+      value: `#${orderCounter}`,
+      inline: true
+    },
+    {
+      name: "👤 Assigned Seller",
+      value: `None`,
+      inline: false
+    }
+  )
+  .setThumbnail("https://cdn-icons-png.flaticon.com/512/3135/3135715.png")
+  .setImage("PUT_YOUR_BANNER_LINK")
+  .setFooter({
+    text: "BOOSTFIY © All Rights Reserved",
+  })
+  .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -291,6 +319,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
