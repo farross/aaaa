@@ -77,22 +77,33 @@ client.on('messageCreate', async (message) => {
   })
   .setTitle("📦 Order Created")
   .setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-  .addFields(
-    {
-      name: "📄 Order Details",
-      value: `\`\`\`${service}\`\`\``,
-      inline: false
-    },
-    
-    {
-      name: "🆔 Order ID",
-      value: `#${orderCounter}`,
-      inline: true
-    },
-    {
-      name: "👤 Assigned Seller",
-      value: `None`,
-      inline: false
+.addFields(
+  {
+    name: "📦 Order Details",
+    value: `\`\`\`${service}\`\`\``,
+    inline: false
+  },
+  {
+    name: "👤 Client",
+    value: `<@${message.author.id}>`,
+    inline: true
+  },
+  {
+    name: "💰 Price",
+    value: `**${price}**`,
+    inline: true
+  },
+  {
+    name: "🆔 Order ID",
+    value: `#${orderCounter}`,
+    inline: true
+  },
+  {
+    name: "👤 Assigned Seller",
+    value: `None`,
+    inline: false
+  }
+)
     }
   )
   .setThumbnail("https://cdn.discordapp.com/attachments/1474602944983990290/1475266521210294363/Vita_Spray_Blueprint.jpg?ex=699cdc83&is=699b8b03&hm=6a8d0fb5d909490d90b6975542ba66e0eff96dde64d04ad632ac5d0d9192b2d6&")
@@ -315,6 +326,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
