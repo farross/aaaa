@@ -45,7 +45,7 @@ if (message.content.startsWith("!order")) {
 
   const args = message.content.slice(7).split("|");
   if (args.length < 3)
-    return message.reply("❌ استخدم:\n!order name | price$ | code");
+    return message.reply("❌ استخدم:\n!order | ");
 
   const service = args[0].trim();
   const price = args[1].trim();
@@ -73,17 +73,11 @@ if (message.content.startsWith("!order")) {
     .setColor("#2b2d31")
     .setDescription(
 `📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 🔸 Details: **${service}**
-
-💰 Price: **${price}**
-🔑 Code: **${code}**
 
 💠 Order: **#${orderCounter}**
 👤 Seller: **None**
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
     )
     .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474985664306216990/zby_3.png?ex=699bd6f2&is=699a8572&hm=e5e5edeaa25068c58827b203fd305ddc6bdd880ba862352406be144c86739de7&");
@@ -309,6 +303,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
