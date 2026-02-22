@@ -46,7 +46,7 @@ client.on('messageCreate', async (message) => {
 
     const args = message.content.slice(7).split("|");
     if (args.length < 3)
-      return message.reply("❌ استخدم:\n!order name | price$ | code");
+      return message.reply("❌ استخدم:\n!order
 
     const service = args[0].trim();
     const price = args[1].trim();
@@ -73,7 +73,7 @@ client.on('messageCreate', async (message) => {
   .setColor("#2F3136")
   .setAuthor({
     name: "BOOSTFIY STORE",
-    iconURL: message.guild.iconURL()
+    iconURL: message.guild.iconURL("https://imgur.com/aRB6qJZ")
   })
   .setTitle("📦 Order Created")
   .setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -99,8 +99,8 @@ client.on('messageCreate', async (message) => {
       inline: false
     }
   )
-  .setThumbnail("https://i.thteam.me/f9E5xsy-aX.png")
-  .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699cb0fb&is=699b5f7b&hm=fcf7cf0c2aa44ad234ebed8605eb2a112bfe679978625bdfd8cdd06316f3d298&")
+  .setThumbnail("https://imgur.com/aRB6qJZ")
+  .setImage("https://imgur.com/aRB6qJZ")
   .setFooter({
     text: "BOOSTFIY © All Rights Reserved",
   })
@@ -319,6 +319,7 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
 
 
