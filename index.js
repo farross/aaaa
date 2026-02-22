@@ -69,9 +69,13 @@ client.on('messageCreate', async (message) => {
 
     if (!ordersChannel) return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
 
-    // 🎯 الإيمبد زي الصورة الثانية بالضبط
+    // 🎯 الإيمبد زي الصورة بالضبط
     const embed = new EmbedBuilder()
-      .setColor("#000000")  // ← اللون الأسود زي الصورة
+      .setColor("#000000")
+      .setAuthor({
+        name: "BOOSTFIY",
+        iconURL: "https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&"
+      })
       .setDescription(
 `📢 **NEW ORDER** <@&${GAMERS_ROLE_ID}>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -81,7 +85,13 @@ client.on('messageCreate', async (message) => {
 👤 Seller: **None**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
       )
-      .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&");
+      .setThumbnail("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&")
+      .setImage("https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&")
+      .setFooter({
+        text: "BOOSTFIY",
+        iconURL: "https://cdn.discordapp.com/attachments/908838301832720394/1475038586507231344/Black_Geometric_Minimalist_Gaming_Logo.gif?ex=699c083b&is=699ab6bb&hm=59869632ac623640c1f3ef798eba23f9589fa52faa48a035f213b937749e574b&"
+      })
+      .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
