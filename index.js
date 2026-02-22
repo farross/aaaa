@@ -79,7 +79,7 @@ if (message.content.startsWith("!order")) {
 🔸 **Details:** ${service}
 
 💰 **Price:** ${price}
-🔑 **Code:** ${code}
+🔑 **Code:** **${code}**
 
 💠 **Order:** #${orderCounter}
 👤 **Seller:** None
@@ -309,4 +309,5 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
+
 
