@@ -274,15 +274,21 @@ ${data.service}
       )
     );
 
-const closeRow = new ActionRowBuilder().addComponents(
+const ticketButtons = new ActionRowBuilder().addComponents(
+
   new ButtonBuilder()
     .setCustomId(`close_${id}`)
     .setLabel("🔒 Close")
-    .setStyle(ButtonStyle.Danger)
+    .setStyle(ButtonStyle.Danger),
+
+  new ButtonBuilder()
+    .setCustomId("open_rating")
+    .setLabel("⭐ Feedback")
+    .setStyle(ButtonStyle.Success)
 );
 
 await ticketChannel.send({
-  components: [ticketContainer, closeRow],
+  components: [ticketContainer, ticketButtons],
   flags: MessageFlags.IsComponentsV2
 });
 
@@ -318,32 +324,24 @@ await interaction.channel.permissionOverwrites.edit(data.customer, {
   SendMessages: false
 });
 
-// تعطيل زر Close
-const disabledCloseRow = new ActionRowBuilder().addComponents(
+const disabledButtons = new ActionRowBuilder().addComponents(
+
   new ButtonBuilder()
     .setCustomId(`close_${id}`)
     .setLabel("🔒 Closed")
     .setStyle(ButtonStyle.Danger)
-    .setDisabled(true)
-);
+    .setDisabled(true),
 
-// زر الفيدباك
-const feedbackRow = new ActionRowBuilder().addComponents(
   new ButtonBuilder()
     .setCustomId("open_rating")
-    .setLabel("⭐ Leave Feedback")
+    .setLabel("⭐ Feedback")
     .setStyle(ButtonStyle.Success)
 );
+
 
 // تعديل الرسالة الأصلية
 await interaction.message.edit({
   components: [disabledCloseRow]
-});
-
-// إرسال رسالة الفيدباك
-await interaction.channel.send({
-  content: `<@${data.customer}> Your order is completed!\nPlease leave a feedback ⭐`,
-  components: [feedbackRow]
 });
 
 return interaction.editReply({
