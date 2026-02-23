@@ -358,11 +358,59 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_order_"
   if (!data)
     return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
 
-  data.service = interaction.fields.getTextInputValue("service");
-  data.price = interaction.fields.getTextInputValue("price");
-  data.image = interaction.fields.getTextInputValue("image") || null;
+  const newService = interaction.fields.getTextInputValue("service");
+  const newPrice = interaction.fields.getTextInputValue("price");
+  const newImage = interaction.fields.getTextInputValue("image") || null;
+
+  // تحديث البيانات
+  data.service = newService;
+  data.price = newPrice;
+  data.image = newImage;
 
   saveOrders();
+
+  // إعادة بناء رسالة الأوردر
+  const updatedContainer = new ContainerBuilder()
+    .addMediaGalleryComponents(media =>
+      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+    )
+    .addSeparatorComponents(sep =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+    )
+    .addTextDisplayComponents(text =>
+      text.setContent(
+`## 📢 UPDATED ORDER
+
+### 📦 Details
+\`\`\`
+${newService}
+\`\`\``
+      )
+    );
+
+  if (newImage && newImage.startsWith("http")) {
+    updatedContainer.addMediaGalleryComponents(media =>
+      media.addItems(new MediaGalleryItemBuilder().setURL(newImage))
+    );
+  }
+
+  updatedContainer
+    .addSeparatorComponents(sep =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+    )
+    .addTextDisplayComponents(text =>
+      text.setContent(
+`💰 **Price:** ${newPrice}
+🆔 **Order ID:** #${id}
+👤 **Seller:** <@${data.customer}>`
+      )
+    );
+
+  // تعديل رسالة الأوردر الأصلية
+  await interaction.message.edit({
+    components: [updatedContainer, interaction.message.components[1]],
+    flags: MessageFlags.IsComponentsV2
+  });
 
   return interaction.reply({
     content: "✅ Order updated successfully.",
