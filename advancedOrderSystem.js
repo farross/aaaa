@@ -21,6 +21,7 @@ const TICKET_CATEGORY_ID = "1474602945579450458";
 const BANNER_URL = "https://cdn.discordapp.com/attachments/1474602944983990282/1475360402660524093/Black_Geometric_Minimalist_Gaming_Logo_-_2_-_Edited.png?ex=699d33f2&is=699be272&hm=82b643c6dfa1093f80026bfb21a55f0504e7a45c2c1689479484b1db01698fd9&";
 const CLOSED_CATEGORY_ID = "1474602945579450459";
 const ORDER_ROLE_ID = "1474602944602177730";
+const MANAGER_ROLE_ID = "1474602944602177730";
 
 let orderData = { count: 0, orders: {} };
 
@@ -207,12 +208,11 @@ if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
       .setLabel("Accepted ✅")
       .setStyle(ButtonStyle.Success)
       .setDisabled(true),
-    new ButtonBuilder()
-      .setCustomId(`cancel_${id}`)
-      .setLabel("Cancel")
-      .setStyle(ButtonStyle.Danger)
-      .setDisabled(true)
-  );
+  new ButtonBuilder()
+    .setCustomId(`manage_${orderNumber}`)
+    .setLabel("Manage")
+    .setStyle(ButtonStyle.Secondary)
+);
 
   // تحديث رسالة الأوردر الأصلية
   await interaction.message.edit({
