@@ -164,16 +164,17 @@ ${service}
           )
         );
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`accept_${orderNumber}`)
-          .setLabel("Accept")
-          .setStyle(ButtonStyle.Success),
-        new ButtonBuilder()
-          .setCustomId(`cancel_${orderNumber}`)
-          .setLabel("Cancel")
-          .setStyle(ButtonStyle.Danger)
-      );
+const row = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId(`accept_${orderNumber}`)
+    .setLabel("Accept")
+    .setStyle(ButtonStyle.Success),
+
+  new ButtonBuilder()
+    .setCustomId(`manage_${orderNumber}`)
+    .setLabel("Manage")
+    .setStyle(ButtonStyle.Secondary)
+);
 
       await orderChannel.send({
         components: [container, row],
@@ -202,14 +203,15 @@ if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
   saveOrders();
 
   // ===== قفل الأزرار =====
-  const disabledRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`accept_${id}`)
-      .setLabel("Accepted ✅")
-      .setStyle(ButtonStyle.Success)
-      .setDisabled(true),
+const disabledRow = new ActionRowBuilder().addComponents(
   new ButtonBuilder()
-    .setCustomId(`manage_${orderNumber}`)
+    .setCustomId(`accept_${id}`)
+    .setLabel("Accepted ✅")
+    .setStyle(ButtonStyle.Success)
+    .setDisabled(true),
+
+  new ButtonBuilder()
+    .setCustomId(`manage_${id}`)
     .setLabel("Manage")
     .setStyle(ButtonStyle.Secondary)
 );
@@ -319,24 +321,117 @@ if (interaction.isButton() && interaction.customId.startsWith("close_")) {
   });
 }
 
-    // ===== CANCEL =====
-    if (interaction.isButton() && interaction.customId.startsWith("cancel_")) {
+// ===== MANAGE =====
+if (interaction.isButton() && interaction.customId.startsWith("manage_")) {
 
-      const id = interaction.customId.split("_")[1];
-      const data = orderData.orders[id];
+  const id = interaction.customId.split("_")[1];
+  const data = orderData.orders[id];
 
-      if (!data) return interaction.reply({ content: "❌ الطلب غير موجود.", ephemeral: true });
-      if (interaction.user.id !== data.customer)
-        return interaction.reply({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
+  if (!data)
+    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
 
-      data.status = "cancelled";
-      saveOrders();
+  // التحقق من الرول
+  if (!interaction.member.roles.cache.has(MANAGER_ROLE_ID))
+    return interaction.reply({ content: "❌ You don't have permission to manage this order.", ephemeral: true });
 
-      await interaction.message.edit({ components: [] });
+  const modal = new ModalBuilder()
+    .setCustomId(`edit_order_${id}`)
+    .setTitle("Edit Order");
 
-      return interaction.reply({ content: "❌ تم إلغاء الطلب.", ephemeral: true });
-    }
+  const serviceInput = new TextInputBuilder()
+    .setCustomId("service")
+    .setLabel("Edit Service")
+    .setStyle(TextInputStyle.Paragraph)
+    .setValue(data.service)
+    .setRequired(true);
 
+  const priceInput = new TextInputBuilder()
+    .setCustomId("price")
+    .setLabel("Edit Price")
+    .setStyle(TextInputStyle.Short)
+    .setValue(data.price)
+    .setRequired(true);
+
+  const imageInput = new TextInputBuilder()
+    .setCustomId("image")
+    .setLabel("Edit Image URL")
+    .setStyle(TextInputStyle.Short)
+    .setValue(data.image || "")
+    .setRequired(false);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(serviceInput),
+    new ActionRowBuilder().addComponents(priceInput),
+    new ActionRowBuilder().addComponents(imageInput)
+  );
+
+  return interaction.showModal(modal);
+}
+// ===== UPDATE ORDER =====
+if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_order_")) {
+
+  const id = interaction.customId.split("_")[2];
+  const data = orderData.orders[id];
+
+  if (!data)
+    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
+
+  const newService = interaction.fields.getTextInputValue("service");
+  const newPrice = interaction.fields.getTextInputValue("price");
+  const newImage = interaction.fields.getTextInputValue("image") || null;
+
+  data.service = newService;
+  data.price = newPrice;
+  data.image = newImage;
+
+  saveOrders();
+
+  const container = new ContainerBuilder()
+    .addMediaGalleryComponents(media =>
+      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+    )
+    .addSeparatorComponents(sep =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+    )
+    .addTextDisplayComponents(text =>
+      text.setContent(
+`## 📢 UPDATED ORDER
+
+### 📦 Details
+\`\`\`
+${newService}
+\`\`\``
+      )
+    );
+
+  if (newImage && newImage.startsWith("http")) {
+    container.addMediaGalleryComponents(media =>
+      media.addItems(new MediaGalleryItemBuilder().setURL(newImage))
+    );
+  }
+
+  container
+    .addSeparatorComponents(sep =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+    )
+    .addTextDisplayComponents(text =>
+      text.setContent(
+`💰 **Price:** ${newPrice}
+🆔 **Order ID:** #${id}
+👤 **Seller:** <@${data.customer}>`
+      )
+    );
+
+  await interaction.message.edit({
+    components: [container, interaction.message.components[1]],
+    flags: MessageFlags.IsComponentsV2
+  });
+
+  return interaction.reply({
+    content: "✅ Order updated successfully.",
+    ephemeral: true
+  });
+}
   });
 
 };
