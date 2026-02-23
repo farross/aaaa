@@ -115,15 +115,38 @@ module.exports = (client) => {
 
       const feedbackChannel = await interaction.guild.channels.fetch(FEEDBACK_CHANNEL_ID);
 
-      await feedbackChannel.send({
-        content:
-`⭐ **New Rating**
+    const { ContainerBuilder, SeparatorSpacingSize, MediaGalleryItemBuilder, MessageFlags } = require('discord.js');
 
-👤 User: <@${interaction.user.id}>
-⭐ Rating: ${stars}/5
-📝 Feedback:
-${feedback}`
-      });
+const BANNER_URL = "حط_لينك_البانر_هنا";
+
+const container = new ContainerBuilder()
+
+  .addMediaGalleryComponents(media =>
+    media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+  )
+
+  .addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+  )
+
+  .addTextDisplayComponents(text =>
+    text.setContent(
+`## ⭐ NEW FEEDBACK
+
+👤 **User:** <@${interaction.user.id}>
+⭐ **Rating:** ${stars}/5
+
+📝 **Feedback**
+\`\`\`
+${feedback}
+\`\`\``
+    )
+  );
+
+await feedbackChannel.send({
+  components: [container],
+  flags: MessageFlags.IsComponentsV2
+});
 
       return interaction.reply({
         content: "✅ Thank you for your feedback!",
