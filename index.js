@@ -6,7 +6,6 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  EmbedBuilder,
   PermissionsBitField,
   StringSelectMenuBuilder
 } = require('discord.js');
@@ -44,7 +43,7 @@ client.on('messageCreate', async (message) => {
 
     const args = message.content.slice(7).split("|");
     if (args.length < 3)
-      return message.reply("❌ استخدم:\n!order name | price$ | code");
+      return message.reply("❌ استخدم:\n`!order name | price$ | code`");
 
     const service = args[0].trim();
     const price = args[1].trim();
@@ -65,33 +64,21 @@ client.on('messageCreate', async (message) => {
       c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
     );
 
-    if (!ordersChannel)
-      return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
+    if (!ordersChannel) return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
 
-    // 🖤 Dark Gaming Embed
-    const embed = new EmbedBuilder()
-      .setColor("#111214")
-      .setAuthor({
-        name: "🖤 BOOSTFIY"
-      })
-      .setDescription(
-`## 📢 NEW ORDER  <@&${GAMERS_ROLE_ID}>
+    // تصميم الـ UI Container الجديد باستخدام الـ Markdown بدل الـ Embed
+    const uiContent = `
+# 📢 𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑
+<@&${GAMERS_ROLE_ID}>
+━━━━━━━━━━━━━━━━━━━━
+> **🔸 Details:** \`${service}\`
+> **💰 Price:** \`${price}\`
+> **🔑 Code:** ||\`${code}\`||
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-> 🎮 **Service:** ${service}
-
-> 💰 **Price:** ${price}  
-> 🔑 **Code:** ${code}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-> 🆔 **Order ID:** #${orderCounter}  
-> 👤 **Seller:** None
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
-      )
-      .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
+\`💠 Order: #${orderCounter}\` | \`👤 Seller: None\`
+━━━━━━━━━━━━━━━━━━━━
+https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png
+`;
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -105,7 +92,7 @@ client.on('messageCreate', async (message) => {
     );
 
     const msg = await ordersChannel.send({
-      embeds: [embed],
+      content: uiContent,
       components: [row]
     });
 
@@ -117,12 +104,12 @@ client.on('messageCreate', async (message) => {
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("buy_start")
-        .setLabel("🛒 Buy")
+        .setLabel("🛒 Buy Now")
         .setStyle(ButtonStyle.Success)
     );
 
     message.channel.send({
-      content: "## BOOSTFIY STORE 👑",
+      content: "# 👑 BOOSTFIY STORE\n> Welcome to our official store! Click the button below to start your purchase.",
       components: [row]
     });
   }
@@ -132,25 +119,27 @@ client.on('messageCreate', async (message) => {
 
 client.on('interactionCreate', async (interaction) => {
 
+  // ===== BUY =====
   if (interaction.isButton() && interaction.customId === "buy_start") {
 
     const menu = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("select_game")
-        .setPlaceholder("Choose Game")
+        .setPlaceholder("🎮 Choose Game")
         .addOptions([
-          { label: "WoW", value: "wow" },
-          { label: "ARK Raiders", value: "ark" }
+          { label: "World of Warcraft", value: "wow", description: "WoW Services" },
+          { label: "ARK Raiders", value: "ark", description: "ARK Items & Weapons" }
         ])
     );
 
     return interaction.reply({
-      content: "Select Game:",
+      content: "### 🎮 Please select a game from the menu below:",
       components: [menu],
       ephemeral: true
     });
   }
 
+  // ===== SELECT MENU =====
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === "select_game") {
@@ -160,7 +149,7 @@ client.on('interactionCreate', async (interaction) => {
         const arkMenu = new ActionRowBuilder().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId("select_ark")
-            .setPlaceholder("Choose Category")
+            .setPlaceholder("📦 Choose Category")
             .addOptions([
               { label: "Items", value: "items" },
               { label: "Weapons", value: "weapons" }
@@ -168,7 +157,7 @@ client.on('interactionCreate', async (interaction) => {
         );
 
         return interaction.update({
-          content: "Choose ARK Category:",
+          content: "### 📦 Choose ARK Category:",
           components: [arkMenu]
         });
       }
@@ -194,34 +183,23 @@ client.on('interactionCreate', async (interaction) => {
 
     const id = interaction.customId.split("_")[1];
     const data = orders[id];
-    if (!data) return;
+    if (!data) return interaction.reply({ content: "❌ Order not found!", ephemeral: true });
 
     data.seller = interaction.user.id;
 
     const originalMsg = await interaction.channel.messages.fetch(data.messageId);
 
-    const updatedEmbed = new EmbedBuilder()
-      .setColor("#111214")
-      .setAuthor({
-        name: "🖤 BOOSTFIY"
-      })
-      .setDescription(
-`## ⚡ ORDER COLLECTED
+    // تحديث الـ UI Container بعد ما حد يستلم الأوردر
+    const updatedUiContent = `
+# 📦 𝐎𝐑𝐃𝐄𝐑 𝐂𝐎𝐋𝐋𝐄𝐂𝐓𝐄𝐃
+━━━━━━━━━━━━━━━━━━━━
+> ~~**🔸 Details:** ${data.service}~~
+> ~~**💰 Price:** ${data.price}~~
+> ~~**🔑 Code:** ||${data.code}||~~
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-> 🎮 ~~${data.service}~~  
-> 💰 ~~${data.price}~~  
-> 🔑 ~~${data.code}~~
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-> 🆔 **Order ID:** #${id}  
-> 👤 **Seller:** <@${data.seller}>
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
-      )
-      .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
+\`💠 Order: #${id}\` | \`👤 Seller:\` <@${data.seller}>
+━━━━━━━━━━━━━━━━━━━━
+`;
 
     const newRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -234,7 +212,7 @@ client.on('interactionCreate', async (interaction) => {
         .setStyle(ButtonStyle.Secondary)
     );
 
-    await originalMsg.edit({ embeds: [updatedEmbed], components: [newRow] });
+    await originalMsg.edit({ content: updatedUiContent, components: [newRow] });
 
     const category = interaction.guild.channels.cache.find(
       c => c.name === TICKET_CATEGORY_NAME
@@ -242,7 +220,7 @@ client.on('interactionCreate', async (interaction) => {
 
     const ticket = await interaction.guild.channels.create({
       name: `ticket-${id}`,
-      parent: category.id,
+      parent: category ? category.id : null,
       permissionOverwrites: [
         { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
         { id: data.client, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
@@ -253,20 +231,21 @@ client.on('interactionCreate', async (interaction) => {
     const closeRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`close_${id}`)
-        .setLabel("Close Ticket")
+        .setLabel("🔒 Close Ticket")
         .setStyle(ButtonStyle.Danger)
     );
 
     await ticket.send({
-      content:
-`🎟️ Order #${id}
+      content: `
+# 🎟️ Order #${id}
+━━━━━━━━━━━━━━━━━━━━
+**👤 Client:** <@${data.client}>
+**🛒 Seller:** <@${data.seller}>
 
-👤 Client: <@${data.client}>
-🛒 Seller: <@${data.seller}>
-
-📦 ${data.service}
-💰 ${data.price}
-🔑 ${data.code}`,
+> **📦 Service:** \`${data.service}\`
+> **💰 Price:** \`${data.price}\`
+> **🔑 Code:** ||\`${data.code}\`||
+━━━━━━━━━━━━━━━━━━━━`,
       components: [closeRow]
     });
 
@@ -280,8 +259,10 @@ client.on('interactionCreate', async (interaction) => {
       c => c.name === CLOSED_CATEGORY_NAME
     );
 
-    await interaction.channel.setParent(closedCategory.id);
-    await interaction.channel.setName(`closed-${interaction.channel.name}`);
+    if (closedCategory) {
+      await interaction.channel.setParent(closedCategory.id);
+    }
+    await interaction.channel.setName(`closed-${interaction.channel.name.replace('ticket-', '')}`);
 
     await interaction.reply({ content: "✅ Ticket Closed", ephemeral: true });
   }
@@ -297,7 +278,7 @@ async function createShopTicket(interaction, service, price) {
 
   const ticket = await interaction.guild.channels.create({
     name: `ticket-${orderCounter}`,
-    parent: category.id,
+    parent: category ? category.id : null,
     permissionOverwrites: [
       { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
       { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
@@ -307,21 +288,17 @@ async function createShopTicket(interaction, service, price) {
   const closeRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`close_${orderCounter}`)
-      .setLabel("Close Ticket")
+      .setLabel("🔒 Close Ticket")
       .setStyle(ButtonStyle.Danger)
   );
 
   await ticket.send({
-    content:
-`🛍️ Shop Order
+    content: `
+# 🛍️ Shop Order
+━━━━━━━━━━━━━━━━━━━━
+**👤 Client:** <@${interaction.user.id}>
 
-👤 Client: <@${interaction.user.id}>
-📦 ${service}
-💰 ${price}`,
-    components: [closeRow]
-  });
-
-  await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
-}
-
-client.login(process.env.TOKEN);
+> **📦 Item:** \`${service}\`
+> **💰 Price:** \`${price}\`
+━━━━━━━━━━━━━━━━━━━━`,
+    components: [
