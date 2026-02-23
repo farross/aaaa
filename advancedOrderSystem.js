@@ -178,10 +178,13 @@ module.exports = (client) => {
           .setStyle(ButtonStyle.Secondary)
       );
 
-      await channel.send({
-        components: [buildOrderContainer(id, orderData.orders[id]), row],
-        flags: MessageFlags.IsComponentsV2
-      });
+const orderMessage = await channel.send({
+  components: [buildOrderContainer(id, orderData.orders[id]), row],
+  flags: MessageFlags.IsComponentsV2
+});
+
+orderData.orders[id].messageId = orderMessage.id;
+saveOrders();
 
       return interaction.reply({ content: "✅ Order Sent!", ephemeral: true });
     }
@@ -288,25 +291,43 @@ module.exports = (client) => {
       return interaction.showModal(modal);
     }
 
-    // ================= UPDATE ORDER =================
-    if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_")) {
+// ================= UPDATE ORDER =================
+if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_")) {
 
-      const id = interaction.customId.split("_")[1];
-      const data = orderData.orders[id];
-      if (!data)
-        return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
+  const id = interaction.customId.split("_")[1];
+  const data = orderData.orders[id];
 
-      data.service = interaction.fields.getTextInputValue("service");
-      data.price = interaction.fields.getTextInputValue("price");
-      data.image = interaction.fields.getTextInputValue("image") || null;
+  if (!data)
+    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
 
-      saveOrders();
+  // تحديث البيانات
+  data.service = interaction.fields.getTextInputValue("service");
+  data.price = interaction.fields.getTextInputValue("price");
+  data.image = interaction.fields.getTextInputValue("image") || null;
 
-      await interaction.reply({
-        content: "✅ Order updated successfully.",
-        ephemeral: true
-      });
-    }
+  saveOrders();
+
+  try {
+    const channel = await interaction.guild.channels.fetch(ORDER_CHANNEL_ID);
+    const message = await channel.messages.fetch(data.messageId);
+
+    await message.edit({
+      components: [
+        buildOrderContainer(id, data),
+        message.components[1]
+      ],
+      flags: MessageFlags.IsComponentsV2
+    });
+
+  } catch (err) {
+    console.log("Failed to update order message:", err);
+  }
+
+  return interaction.reply({
+    content: "✅ Order updated successfully.",
+    ephemeral: true
+  });
+}
 
     // ================= CLOSE =================
     if (interaction.isButton() && interaction.customId.startsWith("close_")) {
