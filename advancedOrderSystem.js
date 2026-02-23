@@ -19,6 +19,7 @@ const GAMERS_ROLE_ID = "1474625885062697161";
 const COMMUNITY_ROLE_ID = "1474625885062697161";
 const TICKET_CATEGORY_ID = "1474602945579450458";
 const BANNER_URL = "https://cdn.discordapp.com/attachments/1474602944983990282/1475360402660524093/Black_Geometric_Minimalist_Gaming_Logo_-_2_-_Edited.png?ex=699d33f2&is=699be272&hm=82b643c6dfa1093f80026bfb21a55f0504e7a45c2c1689479484b1db01698fd9&";
+const CLOSED_CATEGORY_ID = "1474602945579450459";
 
 let orderData = { count: 0, orders: {} };
 
@@ -270,15 +271,17 @@ ${data.service}
       )
     );
 
-  await ticketChannel.send({
-    components: [ticketContainer],
-    flags: MessageFlags.IsComponentsV2
-  });
+const closeRow = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId(`close_${id}`)
+    .setLabel("🔒 Close")
+    .setStyle(ButtonStyle.Danger)
+);
 
-  return interaction.reply({
-    content: `✅ تم فتح التيكيت: ${ticketChannel}`,
-    ephemeral: true
-  });
+await ticketChannel.send({
+  components: [ticketContainer, closeRow],
+  flags: MessageFlags.IsComponentsV2
+});
 }
 
 
