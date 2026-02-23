@@ -13,9 +13,9 @@ const {
 // =============================
 // الإعدادات
 // =============================
-const SHOP_CHANNEL_ID = "PUT_SHOP_CHANNEL_ID";
-const SHOP_ROLE_ID = "PUT_ROLE_TO_PING";
-const TICKET_CATEGORY_ID = "PUT_TICKET_CATEGORY_ID";
+const SHOP_CHANNEL_ID = "1474602944983990284";
+const SHOP_ROLE_ID = "1474625885062697161";
+const TICKET_CATEGORY_ID = "1474602945579450458";
 
 // =============================
 // المنتجات
