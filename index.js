@@ -12,10 +12,12 @@ const client = new Client({
 // استدعاء السيستمات
 require('./advancedOrderSystem')(client);
 require('./ratingSystem')(client);
+require('./rulesPanel')(client);
 
 client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
 client.login(process.env.TOKEN);
+
 
