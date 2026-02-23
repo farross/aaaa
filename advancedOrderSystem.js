@@ -326,13 +326,10 @@ ${data.service}
         flags: MessageFlags.IsComponentsV2
       });
 
-      await interaction.message.edit({ components: [] });
-
-      return interaction.reply({
-        content: `✅ تم فتح التيكيت: ${ticketChannel}`,
-        ephemeral: true
-      });
-    }
+   await interaction.message.edit({
+  components: [disabledRow],
+  flags: MessageFlags.IsComponentsV2
+});
 
     // ===== CANCEL =====
     if (interaction.isButton() && interaction.customId.startsWith("cancel_")) {
