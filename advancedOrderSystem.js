@@ -186,17 +186,17 @@ if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
   const data = orderData.orders[id];
 
   if (!data)
-    return interaction.reply({ content: "❌ الطلب غير موجود.", ephemeral: true });
+    return interaction.editReply({ content: "❌ الطلب غير موجود.", ephemeral: true });
 
   // لو اتقبل قبل كده
   if (data.status === "accepted")
-    return interaction.reply({ content: "❌ الطلب تم قبوله بالفعل.", ephemeral: true });
+    return interaction.editReply({({ content: "❌ الطلب تم قبوله بالفعل.", ephemeral: true });
 
   if (interaction.user.id !== data.customer)
-    return interaction.reply({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
+    return interaction.editReply({({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
 
   if (!interaction.member.roles.cache.has(COMMUNITY_ROLE_ID))
-    return interaction.reply({ content: "❌ لازم يكون معاك رول Community.", ephemeral: true });
+    return interaction.editReply({ content: "❌ لازم يكون معاك رول Community.", ephemeral: true });
 
   data.status = "accepted";
   saveOrders();
