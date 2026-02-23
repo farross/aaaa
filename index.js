@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-
+const { Client, GatewayIntentBits } = require('./ratingSystem')(client);
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -16,3 +16,4 @@ client.once('ready', () => {
 });
 
 client.login(process.env.TOKEN);
+
