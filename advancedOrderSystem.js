@@ -42,6 +42,10 @@ module.exports = (client) => {
 
     if (message.content === "!setup-order") {
 
+  if (!message.member.roles.cache.has(ORDER_ROLE_ID)) {
+    return message.reply("❌ ليس لديك صلاحية لاستخدام هذا الأمر.");
+  }
+
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("start_order")
