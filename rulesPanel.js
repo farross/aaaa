@@ -3,7 +3,7 @@ const {
   Events
 } = require('discord.js');
 
-const BANNER_URL = "https://i.postimg.cc/ryjGv3JR/3.png";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475579930405240983/Black_Geometric_Minimalist_Gaming_Logo_7.png?ex=699e0066&is=699caee6&hm=543e68eac0af4be63f3dc324e4f6782392a11a1ca32e09374b9483482253e1a8&";
 
 module.exports = (client) => {
 
@@ -13,20 +13,35 @@ module.exports = (client) => {
     if (message.content !== "!setup-rules") return;
 
     const embed = new EmbedBuilder()
-      .setColor("#5865F2")
-      .setTitle("⚖️ BOOSTFIY RULES")
+      .setColor("#111111")
+      .setTitle("📜 قوانين متجر الطلبات")
       .setDescription(`
-> 1️⃣ Respect all members  
-> 2️⃣ No spam or advertising  
-> 3️⃣ No toxicity or hate speech  
-> 4️⃣ Use channels correctly  
-> 5️⃣ Follow Discord ToS  
+━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 **1) الاحترام واجب**
+يُمنع السب، الإهانة أو التقليل من أي عضو داخل السيرفر.
+
+🔹 **2) الجدية في الطلب**
+أي طلب بدون نية شراء حقيقية قد يعرضك للتحذير.
+
+🔹 **3) الدفع أولاً**
+يتم تنفيذ الطلب بعد تأكيد الدفع فقط.
+
+🔹 **4) عدم فتح أكثر من تذكرة**
+فتح عدة تذاكر لنفس الطلب قد يؤدي لإغلاقها.
+
+🔹 **5) ممنوع الإزعاج أو السبام**
+أي سبام داخل التذاكر أو الرومات يعرضك للعقوبة.
+
+🔹 **6) الالتزام بقوانين ديسكورد**
+أي مخالفة لشروط Discord الرسمية يتم التعامل معها فوراً.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-Please follow the rules to avoid punishment.
+
+⚠️ مخالفة القوانين قد تؤدي إلى حظر دائم من المتجر.
 `)
       .setImage(BANNER_URL)
-      .setFooter({ text: "Boostfiy Community • Stay Respectful" })
+      .setFooter({ text: "متجر Boostfiy • نقدر ثقتكم بنا" })
       .setTimestamp();
 
     await message.channel.send({ embeds: [embed] });
