@@ -23,11 +23,15 @@ const BANNER_URL = "https://cdn.discordapp.com/attachments/976992409219133530/14
 const COOLDOWN = 60000;
 const cooldowns = new Map();
 
-// تعديل بسيط في الداتا عشان نحفظ تفاصيل كل طلب
+// تجهيز الداتا بيز المصغرة
 let orderData = { count: 0, orders: {} };
 if (fs.existsSync('./orders.json')) {
-  orderData = JSON.parse(fs.readFileSync('./orders.json'));
-  if (!orderData.orders) orderData.orders = {}; // للتأكد من وجود الأوبجكت
+  try {
+    orderData = JSON.parse(fs.readFileSync('./orders.json'));
+    if (!orderData.orders) orderData.orders = {};
+  } catch (err) {
+    console.error("Error reading orders.json:", err);
+  }
 }
 
 function saveOrders() {
@@ -36,6 +40,7 @@ function saveOrders() {
 
 module.exports = (client) => {
 
+  // ===== إرسال رسالة التقديم =====
   client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
@@ -54,9 +59,10 @@ module.exports = (client) => {
     }
   });
 
+  // ===== التفاعل مع الزراير والمودال =====
   client.on(Events.InteractionCreate, async (interaction) => {
 
-    // ===== START BUTTON =====
+    // 1. زرار بداية الطلب
     if (interaction.isButton() && interaction.customId === "start_order") {
       if (cooldowns.has(interaction.user.id)) {
         const remaining = (cooldowns.get(interaction.user.id) - Date.now()) / 1000;
@@ -97,7 +103,7 @@ module.exports = (client) => {
       return interaction.showModal(modal);
     }
 
-    // ===== MODAL SUBMIT (NEW ORDER) =====
+    // 2. استلام بيانات المودال (إنشاء الطلب)
     if (interaction.isModalSubmit() && interaction.customId === "order_modal") {
       orderData.count++;
       const orderNumber = orderData.count;
@@ -106,7 +112,6 @@ module.exports = (client) => {
       const price = interaction.fields.getTextInputValue("price");
       const code = interaction.fields.getTextInputValue("code") || "None";
 
-      // حفظ بيانات الطلب في الملف
       orderData.orders[orderNumber] = {
         service: service,
         price: price,
@@ -120,7 +125,6 @@ module.exports = (client) => {
       const orderChannel = await interaction.guild.channels.fetch(ORDER_CHANNEL_ID).catch(() => null);
       if (!orderChannel) return interaction.reply({ content: "❌ Order channel مش موجود", ephemeral: true });
 
-      // بناء الـ Container الأول (طلب جديد)
       const container = new ContainerBuilder()
         .addMediaGalleryComponents(media =>
           media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
@@ -164,14 +168,96 @@ ${service}
       return interaction.reply({ content: "✅ تم إرسال طلبك بنجاح!", ephemeral: true });
     }
 
-    // ===== COLLECT BUTTON (ACTIVE ORDER) =====
+    // 3. زرار الاستلام (Collect)
     if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
       const id = interaction.customId.split("_")[1];
       const data = orderData.orders[id];
 
       if (!data) return interaction.reply({ content: "❌ الطلب ده مش موجود في الداتا بيز.", ephemeral: true });
-      if (data.seller)
-  return interaction.reply({
-    content: "❌ الطلب ده حد تاني استلمه.",
-    ephemeral: true
+      if (data.seller) return interaction.reply({ content: "❌ الطلب ده حد تاني استلمه قبلك.", ephemeral: true });
+
+      // تحديث الداتا
+      data.seller = interaction.user.id;
+      data.status = "active";
+      saveOrders();
+
+      const activeContainer = new ContainerBuilder()
+        .addMediaGalleryComponents(media =>
+          media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+        )
+        .addSeparatorComponents(sep =>
+          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+        )
+        .addTextDisplayComponents(text =>
+          text.setContent(
+`## ⚡ ORDER ACTIVE
+
+📦 **Order Details**
+\`\`\`
+${data.service}
+\`\`\`
+
+💰 **Price:** ${data.price}
+🔑 **Code:** ${data.code}
+
+🆔 **Order ID:** #${id}
+👤 **Seller:** <@${data.seller}>`
+          )
+        );
+
+      const newRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`complete_${id}`)
+          .setLabel("Complete")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`manage_${id}`)
+          .setLabel("Manage")
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      await interaction.message.edit({
+        components: [activeContainer, newRow],
+        flags: MessageFlags.IsComponentsV2
+      });
+
+      return interaction.reply({ content: "✅ تم استلام الطلب بنجاح!", ephemeral: true });
+    }
+
+    // 4. زرار الانتهاء (Complete)
+    if (interaction.isButton() && interaction.customId.startsWith("complete_")) {
+      const id = interaction.customId.split("_")[1];
+      const data = orderData.orders[id];
+
+      if (!data) return interaction.reply({ content: "❌ الطلب ده مش موجود.", ephemeral: true });
+      if (data.seller !== interaction.user.id) return interaction.reply({ content: "❌ انت مش البائع اللي استلم الطلب ده عشان تنهيه!", ephemeral: true });
+
+      data.status = "completed";
+      saveOrders();
+
+      const doneContainer = new ContainerBuilder()
+        .addMediaGalleryComponents(media =>
+          media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+        )
+        .addSeparatorComponents(sep =>
+          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+        )
+        .addTextDisplayComponents(text =>
+          text.setContent(
+`## ✅ ORDER COMPLETED
+
+🆔 **Order ID:** #${id}
+👤 **Seller:** <@${data.seller}>`
+          )
+        );
+
+      await interaction.message.edit({
+        components: [doneContainer],
+        flags: MessageFlags.IsComponentsV2
+      });
+
+      return interaction.reply({ content: "✅ تم إنهاء الطلب بنجاح!", ephemeral: true });
+    }
+
   });
+};
