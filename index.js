@@ -249,7 +249,7 @@ client.on('interactionCreate', async (interaction) => {
       components: [closeRow]
     });
 
-    await interaction.reply({ content: `✅ Ticket Created: ${ticket}`, ephemeral: true });
+    await interaction.reply({ content: `✅ Ticket Created: <#${ticket.id}>`, ephemeral: true });
   }
 
   // ===== CLOSE =====
@@ -301,4 +301,10 @@ async function createShopTicket(interaction, service, price) {
 > **📦 Item:** \`${service}\`
 > **💰 Price:** \`${price}\`
 ━━━━━━━━━━━━━━━━━━━━`,
-    components: [
+    components: [closeRow]
+  });
+
+  await interaction.reply({ content: `✅ Ticket Created: <#${ticket.id}>`, ephemeral: true });
+}
+
+client.login(process.env.TOKEN);
