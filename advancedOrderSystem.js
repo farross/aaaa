@@ -14,11 +14,11 @@ const {
 
 const fs = require('fs');
 
-const ORDER_CHANNEL_ID = "PUT_ORDER_CHANNEL_ID";
-const GAMERS_ROLE_ID = "PUT_GAMERS_ROLE_ID";
-const COMMUNITY_ROLE_ID = "PUT_COMMUNITY_ROLE_ID";
-const TICKET_CATEGORY_ID = "PUT_TICKET_CATEGORY_ID";
-const BANNER_URL = "PUT_BANNER_URL";
+const ORDER_CHANNEL_ID = "1474602944983990290";
+const GAMERS_ROLE_ID = "1474625885062697161";
+const COMMUNITY_ROLE_ID = "1474625885062697161";
+const TICKET_CATEGORY_ID = "1474602945579450458";
+const BANNER_URL = "https://media.discordapp.net/attachments/976992409219133530/1475316403241222214/Black_Geometric_Minimalist_Gaming_Logo.jpg?ex=699d0af8&is=699bb978&hm=8adc7891bc6c866e6e2427b7b7550d215561ebc66199b145daddebabc1566ac2&=&format=webp&width=1872&height=496";
 
 let orderData = { count: 0, orders: {} };
 
