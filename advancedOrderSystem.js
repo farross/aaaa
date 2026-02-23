@@ -229,7 +229,10 @@ ${service}
       await interaction.message.edit({
         components: [interaction.message.components[0], disabledRow]
       });
-      // =============================
+
+}
+
+// =============================
 // إدارة الطلب (Manage)
 // =============================
 if (interaction.isButton() && interaction.customId.startsWith("manage_")) {
@@ -277,7 +280,7 @@ if (interaction.isButton() && interaction.customId.startsWith("manage_")) {
 
   return interaction.showModal(modal);
 }
-      // =============================
+// =============================
 // تحديث بيانات الطلب
 // =============================
 if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_order_")) {
@@ -298,8 +301,8 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_order_"
     content: "✅ Order updated successfully.",
     ephemeral: true
   });
-}
-
+} 
+  
       // إنشاء التيكيت
       const ticketChannel = await interaction.guild.channels.create({
         name: `order-${id}`,
