@@ -170,4 +170,8 @@ ${service}
       const data = orderData.orders[id];
 
       if (!data) return interaction.reply({ content: "❌ الطلب ده مش موجود في الداتا بيز.", ephemeral: true });
-      if (data.seller) return interaction.reply({ content: "❌ الطلب ده حد تاني است
+      if (data.seller)
+  return interaction.reply({
+    content: "❌ الطلب ده حد تاني استلمه.",
+    ephemeral: true
+  });
