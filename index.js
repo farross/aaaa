@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const { Client, GatewayIntentBits } = require('./ratingSystem')(client);
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -9,7 +9,9 @@ const client = new Client({
   ]
 });
 
+// استدعاء السيستمات
 require('./advancedOrderSystem')(client);
+require('./ratingSystem')(client);
 
 client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
