@@ -117,29 +117,53 @@ module.exports = (client) => {
 
     const { ContainerBuilder, SeparatorSpacingSize, MediaGalleryItemBuilder, MessageFlags } = require('discord.js');
 
-const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475369014678257755/Hamster_Dancing_GIF.gif?ex=699d3bf8&is=699bea78&hm=62031b25708d41fb85b53fef276676212aed7cb6bf80d1ed94b3ffe453f8eb9b&";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475378885570072730/Black_Geometric_Minimalist_Gaming_Logo_-_3_-_Edited.jpg?ex=699d4529&is=699bf3a9&hm=5ea707ab42f31bd45969992ccc676599749ff36c50227c87197071f8c3075bc1&";
+
+const avatarURL = interaction.user.displayAvatarURL({ size: 512, extension: "png" });
+
+// تحويل الرقم لنجوم
+const starsVisual = "⭐".repeat(parseInt(stars)) + "☆".repeat(5 - parseInt(stars));
 
 const container = new ContainerBuilder()
 
+  // ===== العنوان فوق =====
+  .addTextDisplayComponents(text =>
+    text.setContent(
+`## 💬 NEW FEEDBACK FROM <@${interaction.user.id}>`
+    )
+  )
+
+  // ===== صورة البروفايل =====
   .addMediaGalleryComponents(media =>
-    media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+    media.addItems(
+      new MediaGalleryItemBuilder().setURL(avatarURL)
+    )
   )
 
   .addSeparatorComponents(sep =>
     sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
   )
 
+  // ===== النجوم والفيدباك =====
   .addTextDisplayComponents(text =>
     text.setContent(
-`## ⭐ NEW FEEDBACK
-
-👤 **User:** <@${interaction.user.id}>
-⭐ **Rating:** ${stars}/5
+`⭐ **Rating:** ${starsVisual}
 
 📝 **Feedback**
 \`\`\`
 ${feedback}
 \`\`\``
+    )
+  )
+
+  .addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+  )
+
+  // ===== البانر تحت =====
+  .addMediaGalleryComponents(media =>
+    media.addItems(
+      new MediaGalleryItemBuilder().setURL(BANNER_URL)
     )
   );
 
