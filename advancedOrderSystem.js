@@ -190,10 +190,10 @@ if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
 
   // لو اتقبل قبل كده
   if (data.status === "accepted")
-    return interaction.editReply({({ content: "❌ الطلب تم قبوله بالفعل.", ephemeral: true });
+    return interaction.editReply({ content: "❌ الطلب تم قبوله بالفعل.", ephemeral: true });
 
   if (interaction.user.id !== data.customer)
-    return interaction.editReply({({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
+    return interaction.editReply({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
 
   if (!interaction.member.roles.cache.has(COMMUNITY_ROLE_ID))
     return interaction.editReply({ content: "❌ لازم يكون معاك رول Community.", ephemeral: true });
@@ -255,11 +255,11 @@ ${data.service}
       )
     );
 
-  if (image && /^https?:\/\/.+\.(png|jpg|jpeg|gif|webp)$/i.test(image)) {
-    ticketContainer.addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
-    );
-  }
+  if (data.image && /^https?:\/\/.+\.(png|jpg|jpeg|gif|webp)$/i.test(data.image)) {
+  ticketContainer.addMediaGalleryComponents(media =>
+    media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
+  );
+}
 
   ticketContainer
     .addSeparatorComponents(sep =>
