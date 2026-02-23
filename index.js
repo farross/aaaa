@@ -1,198 +1,201 @@
-require('./db');
-
 const {
-  Client,
-  GatewayIntentBits,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  EmbedBuilder,
   PermissionsBitField,
-  StringSelectMenuBuilder,
-  ContainerBuilder,
-  SeparatorSpacingSize,
-  MediaGalleryItemBuilder,
-  MessageFlags
+  ChannelType,
+  Events
 } = require('discord.js');
+const fs = require('fs');
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers
-  ]
-});
+const ORDER_CHANNEL_ID = "1474602944983990290";
+const GAMERS_ROLE_ID = "PUT_ROLE_ID";
+const CATEGORY_ID = "PUT_TICKET_CATEGORY_ID";
+const BANNER_URL = "PUT_BANNER_URL";
 
-const OWNER_ROLE_NAME = "ᴼᵂᴺᴱᴿ";
-const GAMERS_ROLE_ID = "1474625885062697161";
-const TICKET_CATEGORY_NAME = "𝐓𝐢𝐜𝐤𝐞𝐭𝐬";
-const CLOSED_CATEGORY_NAME = "𝐂𝐋𝐎𝐒𝐄𝐃";
+const COOLDOWN = 60000; // 60 ثانية
+const cooldowns = new Map();
 
-let orderCounter = 3600;
-let orders = {};
+// تخزين رقم الأوردر
+let orderData = { count: 0 };
+if (fs.existsSync('./orders.json')) {
+  orderData = JSON.parse(fs.readFileSync('./orders.json'));
+}
 
-client.once('ready', () => {
-  console.log("BOOSTFIY Ready 👑");
-});
+module.exports = (client) => {
 
-// ======================= MESSAGE =======================
+  client.on(Events.MessageCreate, async (message) => {
+    if (message.content === "!setup-order") {
 
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
-
-  if (message.content.startsWith("!order")) {
-
-    if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
-      return message.reply("❌ انت مش معاك صلاحية.");
-
-    const args = message.content.slice(7).split("|");
-    if (args.length < 3)
-      return message.reply("❌ استخدم:\n!order name | price$ | code");
-
-    const service = args[0].trim();
-    const price = args[1].trim();
-    const code = args[2].trim();
-
-    orderCounter++;
-
-    orders[orderCounter] = {
-      service,
-      price,
-      code,
-      client: message.author.id,
-      seller: null,
-      messageId: null
-    };
-
-    const ordersChannel = message.guild.channels.cache.find(
-      c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
-    );
-
-    if (!ordersChannel)
-      return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
-
-    // 🖤 Dark Gaming Container
-    const container = new ContainerBuilder()
-
-      .addTextDisplayComponents(text =>
-        text.setContent(`## 🖤 BOOSTFIY - NEW ORDER <@&${GAMERS_ROLE_ID}>`)
-      )
-
-      .addSeparatorComponents(sep =>
-        sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-      )
-
-      .addTextDisplayComponents(text =>
-        text.setContent(
-`🎮 **Service:** ${service}
-💰 **Price:** ${price}
-🔑 **Code:** ${code}
-
-🆔 **Order:** #${orderCounter}
-👤 **Seller:** None`
-        )
-      )
-
-      .addSeparatorComponents(sep =>
-        sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-      )
-
-      .addMediaGalleryComponents(media =>
-        media.addItems(
-          new MediaGalleryItemBuilder()
-            .setURL("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png")
-        )
+      const button = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId("start_order")
+          .setLabel("🚀 Start Order")
+          .setStyle(ButtonStyle.Primary)
       );
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`collect_${orderCounter}`)
-        .setLabel("Collect")
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`manage_${orderCounter}`)
-        .setLabel("Manage")
-        .setStyle(ButtonStyle.Secondary)
-    );
+      message.channel.send({
+        content: "اضغط لبدء طلب جديد 👇",
+        components: [button]
+      });
+    }
+  });
 
-    const msg = await ordersChannel.send({
-      components: [container, row],
-      flags: MessageFlags.IsComponentsV2
-    });
+  client.on(Events.InteractionCreate, async (interaction) => {
 
-    orders[orderCounter].messageId = msg.id;
-  }
+    // ================= START BUTTON =================
+    if (interaction.isButton() && interaction.customId === "start_order") {
 
-  if (message.content === "!store") {
+      if (cooldowns.has(interaction.user.id)) {
+        const remaining = (cooldowns.get(interaction.user.id) - Date.now()) / 1000;
+        if (remaining > 0)
+          return interaction.reply({ content: `⏳ استنى ${remaining.toFixed(0)} ثانية`, ephemeral: true });
+      }
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId("buy_start")
-        .setLabel("🛒 Buy")
-        .setStyle(ButtonStyle.Success)
-    );
+      cooldowns.set(interaction.user.id, Date.now() + COOLDOWN);
 
-    message.channel.send({
-      content: "## BOOSTFIY STORE 👑",
-      components: [row]
-    });
-  }
-});
+      const modal = new ModalBuilder()
+        .setCustomId("order_modal")
+        .setTitle("New Order");
 
-// ======================= INTERACTIONS =======================
+      const detailsInput = new TextInputBuilder()
+        .setCustomId("details")
+        .setLabel("Order Details")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
 
-client.on('interactionCreate', async (interaction) => {
+      const priceInput = new TextInputBuilder()
+        .setCustomId("price")
+        .setLabel("Price")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
 
-  if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
+      const notesInput = new TextInputBuilder()
+        .setCustomId("notes")
+        .setLabel("Extra Notes")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false);
 
-    const id = interaction.customId.split("_")[1];
-    const data = orders[id];
-    if (!data) return;
-
-    data.seller = interaction.user.id;
-
-    const originalMsg = await interaction.channel.messages.fetch(data.messageId);
-
-    const updatedContainer = new ContainerBuilder()
-
-      .addTextDisplayComponents(text =>
-        text.setContent(`## ⚡ ORDER COLLECTED`)
-      )
-
-      .addSeparatorComponents(sep =>
-        sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-      )
-
-      .addTextDisplayComponents(text =>
-        text.setContent(
-`~~🎮 ${data.service}~~
-~~💰 ${data.price}~~
-~~🔑 ${data.code}~~
-
-🆔 **Order:** #${id}
-👤 **Seller:** <@${data.seller}>`
-        )
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(detailsInput),
+        new ActionRowBuilder().addComponents(priceInput),
+        new ActionRowBuilder().addComponents(notesInput)
       );
 
-    const newRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`delivered_${id}`)
-        .setLabel("Delivered")
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId(`manage_${id}`)
-        .setLabel("Manage")
-        .setStyle(ButtonStyle.Secondary)
-    );
+      return interaction.showModal(modal);
+    }
 
-    await originalMsg.edit({
-      components: [updatedContainer, newRow],
-      flags: MessageFlags.IsComponentsV2
-    });
+    // ================= MODAL SUBMIT =================
+    if (interaction.isModalSubmit() && interaction.customId === "order_modal") {
 
-    await interaction.reply({ content: "✅ Collected", ephemeral: true });
-  }
+      orderData.count++;
+      fs.writeFileSync('./orders.json', JSON.stringify(orderData, null, 2));
 
-});
+      const orderNumber = orderData.count;
 
-client.login(process.env.TOKEN);
+      const details = interaction.fields.getTextInputValue("details");
+      const price = interaction.fields.getTextInputValue("price");
+      const notes = interaction.fields.getTextInputValue("notes");
+
+      const orderChannel = interaction.guild.channels.cache.get(ORDER_CHANNEL_ID);
+
+      const embed = new EmbedBuilder()
+        .setColor("#2b2d31")
+        .setTitle(`🛒 NEW ORDER #${orderNumber}`)
+        .addFields(
+          { name: "📦 Order Details", value: details },
+          { name: "💰 Price", value: price },
+          { name: "📝 Notes", value: notes || "No notes" }
+        )
+        .setImage(BANNER_URL)
+        .setThumbnail(interaction.user.displayAvatarURL())
+        .setFooter({ text: `Order by ${interaction.user.tag}` })
+        .setTimestamp();
+
+      const buttons = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`accept_${orderNumber}`)
+          .setLabel("✅ Accept")
+          .setStyle(ButtonStyle.Success),
+
+        new ButtonBuilder()
+          .setCustomId(`reject_${orderNumber}`)
+          .setLabel("❌ Reject")
+          .setStyle(ButtonStyle.Danger),
+
+        new ButtonBuilder()
+          .setCustomId(`ticket_${orderNumber}_${interaction.user.id}`)
+          .setLabel("🎫 Create Ticket")
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      orderChannel.send({
+        content: `📢 **NEW ORDER** <@&${GAMERS_ROLE_ID}>`,
+        embeds: [embed],
+        components: [buttons]
+      });
+
+      return interaction.reply({ content: "✅ تم إرسال طلبك!", ephemeral: true });
+    }
+
+    // ================= ACCEPT =================
+    if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
+
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild))
+        return interaction.reply({ content: "❌ معندكش صلاحية", ephemeral: true });
+
+      const embed = EmbedBuilder.from(interaction.message.embeds[0])
+        .setColor("Green")
+        .setFooter({ text: `Accepted by ${interaction.user.tag}` });
+
+      return interaction.update({ embeds: [embed], components: [] });
+    }
+
+    // ================= REJECT =================
+    if (interaction.isButton() && interaction.customId.startsWith("reject_")) {
+
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild))
+        return interaction.reply({ content: "❌ معندكش صلاحية", ephemeral: true });
+
+      const embed = EmbedBuilder.from(interaction.message.embeds[0])
+        .setColor("Red")
+        .setFooter({ text: `Rejected by ${interaction.user.tag}` });
+
+      return interaction.update({ embeds: [embed], components: [] });
+    }
+
+    // ================= TICKET =================
+    if (interaction.isButton() && interaction.customId.startsWith("ticket_")) {
+
+      const userId = interaction.customId.split("_")[2];
+
+      const channel = await interaction.guild.channels.create({
+        name: `order-${interaction.user.username}`,
+        type: ChannelType.GuildText,
+        parent: CATEGORY_ID,
+        permissionOverwrites: [
+          {
+            id: interaction.guild.id,
+            deny: [PermissionsBitField.Flags.ViewChannel]
+          },
+          {
+            id: userId,
+            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages]
+          }
+        ]
+      });
+
+      channel.send(`🎫 Welcome <@${userId}>`);
+
+      return interaction.reply({ content: "✅ تم إنشاء التذكرة", ephemeral: true });
+    }
+
+  });
+
+};
+
+
