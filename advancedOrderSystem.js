@@ -1,3 +1,6 @@
+// =============================
+// استدعاء المكتبات
+// =============================
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -14,15 +17,22 @@ const {
 
 const fs = require('fs');
 
+// =============================
+// الإعدادات الأساسية
+// =============================
 const ORDER_CHANNEL_ID = "1474602944983990290";
 const GAMERS_ROLE_ID = "1474625885062697161";
 const COMMUNITY_ROLE_ID = "1474625885062697161";
 const TICKET_CATEGORY_ID = "1474602945579450458";
-const BANNER_URL = "https://cdn.discordapp.com/attachments/1474602944983990282/1475360402660524093/Black_Geometric_Minimalist_Gaming_Logo_-_2_-_Edited.png?ex=699d33f2&is=699be272&hm=82b643c6dfa1093f80026bfb21a55f0504e7a45c2c1689479484b1db01698fd9&";
 const CLOSED_CATEGORY_ID = "1474602945579450459";
 const ORDER_ROLE_ID = "1474602944602177730";
 const MANAGER_ROLE_ID = "1474602944602177730";
 
+const BANNER_URL = "https://cdn.discordapp.com/attachments/1474602944983990282/1475360402660524093/Black_Geometric_Minimalist_Gaming_Logo_-_2_-_Edited.png";
+
+// =============================
+// نظام التخزين
+// =============================
 let orderData = { count: 0, orders: {} };
 
 if (fs.existsSync('./orders.json')) {
@@ -33,19 +43,23 @@ function saveOrders() {
   fs.writeFileSync('./orders.json', JSON.stringify(orderData, null, 2));
 }
 
+// =============================
+// تشغيل الموديول
+// =============================
 module.exports = (client) => {
 
   // =============================
-  // !setup-order
+  // أمر إنشاء زر بدء الطلب
   // =============================
   client.on(Events.MessageCreate, async (message) => {
+
     if (message.author.bot) return;
 
     if (message.content === "!setup-order") {
 
-  if (!message.member.roles.cache.has(ORDER_ROLE_ID)) {
-    return message.reply("❌ ليس لديك صلاحية لاستخدام هذا الأمر.");
-  }
+      if (!message.member.roles.cache.has(ORDER_ROLE_ID)) {
+        return message.reply("❌ ليس لديك صلاحية لاستخدام هذا الأمر.");
+      }
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -54,7 +68,7 @@ module.exports = (client) => {
           .setStyle(ButtonStyle.Primary)
       );
 
-      return message.channel.send({
+      message.channel.send({
         content: "اضغط لبدء طلب جديد 👇",
         components: [row]
       });
@@ -62,45 +76,49 @@ module.exports = (client) => {
   });
 
   // =============================
-  // Interactions
+  // كل التفاعلات
   // =============================
   client.on(Events.InteractionCreate, async (interaction) => {
 
-    // ===== فتح المودال =====
+    // =============================
+    // فتح مودال إنشاء الطلب
+    // =============================
     if (interaction.isButton() && interaction.customId === "start_order") {
 
       const modal = new ModalBuilder()
         .setCustomId("order_modal")
         .setTitle("Create Order");
 
-      const serviceInput = new TextInputBuilder()
-        .setCustomId("service")
-        .setLabel("تفاصيل الطلب")
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true);
-
-      const priceInput = new TextInputBuilder()
-        .setCustomId("price")
-        .setLabel("السعر")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-
-      const imageInput = new TextInputBuilder()
-        .setCustomId("image")
-        .setLabel("رابط صورة (اختياري)")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(false);
-
       modal.addComponents(
-        new ActionRowBuilder().addComponents(serviceInput),
-        new ActionRowBuilder().addComponents(priceInput),
-        new ActionRowBuilder().addComponents(imageInput)
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("service")
+            .setLabel("تفاصيل الطلب")
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("price")
+            .setLabel("السعر")
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("image")
+            .setLabel("رابط صورة (اختياري)")
+            .setStyle(TextInputStyle.Short)
+            .setRequired(false)
+        )
       );
 
       return interaction.showModal(modal);
     }
 
-    // ===== إنشاء الطلب =====
+    // =============================
+    // إنشاء الطلب وإرساله
+    // =============================
     if (interaction.isModalSubmit() && interaction.customId === "order_modal") {
 
       orderData.count++;
@@ -123,17 +141,12 @@ module.exports = (client) => {
       const orderChannel = await interaction.guild.channels.fetch(ORDER_CHANNEL_ID);
 
       const container = new ContainerBuilder()
-
-        // ===== البانر =====
         .addMediaGalleryComponents(media =>
           media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
         )
-
         .addSeparatorComponents(sep =>
           sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
         )
-
-        // ===== النص + الصورة تحت التفاصيل =====
         .addTextDisplayComponents(text =>
           text.setContent(
 `## 📢 NEW ORDER <@&${GAMERS_ROLE_ID}>
@@ -145,7 +158,6 @@ ${service}
           )
         );
 
-      // الصورة تحت التفاصيل مباشرة
       if (image && image.startsWith("http")) {
         container.addMediaGalleryComponents(media =>
           media.addItems(new MediaGalleryItemBuilder().setURL(image))
@@ -164,17 +176,16 @@ ${service}
           )
         );
 
-const row = new ActionRowBuilder().addComponents(
-  new ButtonBuilder()
-    .setCustomId(`accept_${orderNumber}`)
-    .setLabel("Accept")
-    .setStyle(ButtonStyle.Success),
-
-  new ButtonBuilder()
-    .setCustomId(`manage_${orderNumber}`)
-    .setLabel("Manage")
-    .setStyle(ButtonStyle.Secondary)
-);
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`accept_${orderNumber}`)
+          .setLabel("Accept")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`manage_${orderNumber}`)
+          .setLabel("Manage")
+          .setStyle(ButtonStyle.Secondary)
+      );
 
       await orderChannel.send({
         components: [container, row],
@@ -184,282 +195,111 @@ const row = new ActionRowBuilder().addComponents(
       return interaction.reply({ content: "✅ تم إرسال طلبك!", ephemeral: true });
     }
 
-// ===== ACCEPT (مضاد سبام + يقفل الزر) =====
-if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
+    // =============================
+    // قبول الطلب وفتح تيكيت
+    // =============================
+    if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
 
-  await interaction.deferReply({ ephemeral: true }); // 👈 هنا تحطها
+      await interaction.deferReply({ ephemeral: true });
 
-  const id = interaction.customId.split("_")[1];
-  const data = orderData.orders[id];
+      const id = interaction.customId.split("_")[1];
+      const data = orderData.orders[id];
 
-  if (!data)
-    return interaction.editReply({ content: "❌ الطلب غير موجود.", ephemeral: true });
+      if (!data)
+        return interaction.editReply({ content: "❌ الطلب غير موجود." });
 
-  // لو اتقبل قبل كده
-  if (data.status === "accepted")
-    return interaction.editReply({ content: "❌ الطلب تم قبوله بالفعل.", ephemeral: true });
+      if (data.status === "accepted")
+        return interaction.editReply({ content: "❌ الطلب تم قبوله بالفعل." });
 
-  data.status = "accepted";
-  saveOrders();
+      data.status = "accepted";
+      saveOrders();
 
-  // ===== قفل الأزرار =====
-const disabledRow = new ActionRowBuilder().addComponents(
-  new ButtonBuilder()
-    .setCustomId(`accept_${id}`)
-    .setLabel("Accepted ✅")
-    .setStyle(ButtonStyle.Success)
-    .setDisabled(true),
+      // تعطيل زر Accept
+      const disabledRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`accept_${id}`)
+          .setLabel("Accepted ✅")
+          .setStyle(ButtonStyle.Success)
+          .setDisabled(true),
+        new ButtonBuilder()
+          .setCustomId(`manage_${id}`)
+          .setLabel("Manage")
+          .setStyle(ButtonStyle.Secondary)
+      );
 
-  new ButtonBuilder()
-    .setCustomId(`manage_${id}`)
-    .setLabel("Manage")
-    .setStyle(ButtonStyle.Secondary)
-);
+      await interaction.message.edit({
+        components: [interaction.message.components[0], disabledRow]
+      });
 
-  // تحديث رسالة الأوردر الأصلية
-  await interaction.message.edit({
-    components: [interaction.message.components[0], disabledRow]
-  });
+      // إنشاء التيكيت
+      const ticketChannel = await interaction.guild.channels.create({
+        name: `order-${id}`,
+        type: 0,
+        parent: TICKET_CATEGORY_ID,
+        permissionOverwrites: [
+          { id: interaction.guild.roles.everyone, deny: ['ViewChannel'] },
+          { id: data.customer, allow: ['ViewChannel', 'SendMessages'] },
+          { id: COMMUNITY_ROLE_ID, allow: ['ViewChannel', 'SendMessages'] }
+        ]
+      });
 
-  // ===== إنشاء التيكيت =====
-  const cleanUsername = interaction.user.username
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+      const ticketButtons = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`close_${id}`)
+          .setLabel("🔒 Close")
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId("open_rating")
+          .setLabel("⭐ Feedback")
+          .setStyle(ButtonStyle.Success)
+      );
 
-  const ticketChannel = await interaction.guild.channels.create({
-    name: `${cleanUsername}-${id}`,
-    type: 0,
-    parent: TICKET_CATEGORY_ID,
-    permissionOverwrites: [
-      { id: interaction.guild.roles.everyone, deny: ['ViewChannel'] },
-      { id: data.customer, allow: ['ViewChannel', 'SendMessages'] },
-      { id: COMMUNITY_ROLE_ID, allow: ['ViewChannel', 'SendMessages'] }
-    ]
-  });
+      await ticketChannel.send({
+        content: `🎫 Order Ticket for <@${data.customer}>`,
+        components: [ticketButtons]
+      });
 
-  // نفس رسالة الأوردر داخل التيكيت
-  const ticketContainer = new ContainerBuilder()
-    .addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
-    )
-    .addSeparatorComponents(sep =>
-      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-    )
-    .addTextDisplayComponents(text =>
-      text.setContent(
-`## 🎫 ORDER TICKET
+      return interaction.editReply({
+        content: `✅ Ticket created: ${ticketChannel}`
+      });
+    }
 
-### 📦 تفاصيل الطلب
-\`\`\`
-${data.service}
-\`\`\``
-      )
-    );
+    // =============================
+    // إغلاق التيكيت
+    // =============================
+    if (interaction.isButton() && interaction.customId.startsWith("close_")) {
 
-  if (data.image && /^https?:\/\/.+\.(png|jpg|jpeg|gif|webp)$/i.test(data.image)) {
-  ticketContainer.addMediaGalleryComponents(media =>
-    media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
-  );
-}
+      await interaction.deferReply({ ephemeral: true });
 
-  ticketContainer
-    .addSeparatorComponents(sep =>
-      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-    )
-    .addTextDisplayComponents(text =>
-      text.setContent(
-`💰 **Price:** ${data.price}
-🆔 **Order ID:** #${id}
-👤 **Seller:** <@${data.customer}>`
-      )
-    );
+      const id = interaction.customId.split("_")[1];
+      const data = orderData.orders[id];
 
-const ticketButtons = new ActionRowBuilder().addComponents(
+      if (!data)
+        return interaction.editReply({ content: "❌ Ticket not found." });
 
-  new ButtonBuilder()
-    .setCustomId(`close_${id}`)
-    .setLabel("🔒 Close")
-    .setStyle(ButtonStyle.Danger),
+      await interaction.channel.setParent(CLOSED_CATEGORY_ID);
 
-  new ButtonBuilder()
-    .setCustomId("open_rating")
-    .setLabel("⭐ Feedback")
-    .setStyle(ButtonStyle.Success)
-);
+      const disabledButtons = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`close_${id}`)
+          .setLabel("🔒 Closed")
+          .setStyle(ButtonStyle.Danger)
+          .setDisabled(true),
+        new ButtonBuilder()
+          .setCustomId("open_rating")
+          .setLabel("⭐ Feedback")
+          .setStyle(ButtonStyle.Success)
+      );
 
-await ticketChannel.send({
-  components: [ticketContainer, ticketButtons],
-  flags: MessageFlags.IsComponentsV2
-});
+      await interaction.message.edit({
+        components: [disabledButtons]
+      });
 
-return interaction.editReply({
-  content: `✅ Ticket created: ${ticketChannel}`
-});
+      return interaction.editReply({
+        content: "🔒 Ticket closed successfully."
+      });
+    }
 
-}
-
-    // ===== CLOSE =====
-if (interaction.isButton() && interaction.customId.startsWith("close_")) {
-
-  await interaction.deferReply({ ephemeral: true });
-
-  const id = interaction.customId.split("_")[1];
-  const data = orderData.orders[id];
-
-  if (!data)
-    return interaction.editReply({ content: "❌ Ticket not found." });
-
-  if (
-    interaction.user.id !== data.customer &&
-    !interaction.member.roles.cache.has(COMMUNITY_ROLE_ID)
-  ) {
-    return interaction.editReply({ content: "❌ You can't close this ticket." });
-  }
-
-// نقل التيكت
-await interaction.channel.setParent(CLOSED_CATEGORY_ID);
-
-// منع العميل من الكتابة
-await interaction.channel.permissionOverwrites.edit(data.customer, {
-  SendMessages: false
-});
-
-const disabledButtons = new ActionRowBuilder().addComponents(
-
-  new ButtonBuilder()
-    .setCustomId(`close_${id}`)
-    .setLabel("🔒 Closed")
-    .setStyle(ButtonStyle.Danger)
-    .setDisabled(true),
-
-  new ButtonBuilder()
-    .setCustomId("open_rating")
-    .setLabel("⭐ Feedback")
-    .setStyle(ButtonStyle.Success)
-);
-
-
-// تعديل الرسالة الأصلية
-await interaction.message.edit({
-  components: [disabledCloseRow]
-});
-
-return interaction.editReply({
-  content: "🔒 Ticket closed & feedback button sent."
-});
-}
-
-// ===== MANAGE =====
-if (interaction.isButton() && interaction.customId.startsWith("manage_")) {
-
-  const id = interaction.customId.split("_")[1];
-  const data = orderData.orders[id];
-
-  if (!data)
-    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
-
-  // التحقق من الرول
-  if (!interaction.member.roles.cache.has(MANAGER_ROLE_ID))
-    return interaction.reply({ content: "❌ You don't have permission to manage this order.", ephemeral: true });
-
-  const modal = new ModalBuilder()
-    .setCustomId(`edit_order_${id}`)
-    .setTitle("Edit Order");
-
-  const serviceInput = new TextInputBuilder()
-    .setCustomId("service")
-    .setLabel("Edit Service")
-    .setStyle(TextInputStyle.Paragraph)
-    .setValue(data.service)
-    .setRequired(true);
-
-  const priceInput = new TextInputBuilder()
-    .setCustomId("price")
-    .setLabel("Edit Price")
-    .setStyle(TextInputStyle.Short)
-    .setValue(data.price)
-    .setRequired(true);
-
-  const imageInput = new TextInputBuilder()
-    .setCustomId("image")
-    .setLabel("Edit Image URL")
-    .setStyle(TextInputStyle.Short)
-    .setValue(data.image || "")
-    .setRequired(false);
-
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(serviceInput),
-    new ActionRowBuilder().addComponents(priceInput),
-    new ActionRowBuilder().addComponents(imageInput)
-  );
-
-  return interaction.showModal(modal);
-}
-// ===== UPDATE ORDER =====
-if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_order_")) {
-
-  const id = interaction.customId.split("_")[2];
-  const data = orderData.orders[id];
-
-  if (!data)
-    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
-
-  const newService = interaction.fields.getTextInputValue("service");
-  const newPrice = interaction.fields.getTextInputValue("price");
-  const newImage = interaction.fields.getTextInputValue("image") || null;
-
-  data.service = newService;
-  data.price = newPrice;
-  data.image = newImage;
-
-  saveOrders();
-
-  const container = new ContainerBuilder()
-    .addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
-    )
-    .addSeparatorComponents(sep =>
-      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-    )
-    .addTextDisplayComponents(text =>
-      text.setContent(
-`## 📢 UPDATED ORDER
-
-### 📦 Details
-\`\`\`
-${newService}
-\`\`\``
-      )
-    );
-
-  if (newImage && newImage.startsWith("http")) {
-    container.addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(newImage))
-    );
-  }
-
-  container
-    .addSeparatorComponents(sep =>
-      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-    )
-    .addTextDisplayComponents(text =>
-      text.setContent(
-`💰 **Price:** ${newPrice}
-🆔 **Order ID:** #${id}
-👤 **Seller:** <@${data.customer}>`
-      )
-    );
-
-  await interaction.message.edit({
-    components: [container, interaction.message.components[1]],
-    flags: MessageFlags.IsComponentsV2
-  });
-
-  return interaction.reply({
-    content: "✅ Order updated successfully.",
-    ephemeral: true
-  });
-}
   });
 
 };
