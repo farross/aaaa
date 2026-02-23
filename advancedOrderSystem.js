@@ -15,7 +15,7 @@ const fs = require('fs');
 const ORDER_CHANNEL_ID = "1474602944983990290";
 const GAMERS_ROLE_ID = "1474602944983990290";
 const CATEGORY_ID = "1474602944983990290";
-const BANNER_URL = "https://i.imgur.com/aRB6qJZ.jpg";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/976992409219133530/1475316403241222214/Black_Geometric_Minimalist_Gaming_Logo.jpg?ex=699d0af8&is=699bb978&hm=8adc7891bc6c866e6e2427b7b7550d215561ebc66199b145daddebabc1566ac2&";
 
 const COOLDOWN = 60000;
 const cooldowns = new Map();
