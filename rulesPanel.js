@@ -15,11 +15,11 @@ module.exports = (client) => {
     if (message.author.bot) return;
     if (message.content !== "!setup-rules") return;
 
-const container = new ContainerBuilder()
+    const container = new ContainerBuilder()
 
-  // العنوان والقوانين
-  .addTextDisplayComponents(text =>
-    text.setContent(`
+      // العنوان والقوانين
+      .addTextDisplayComponents(text =>
+        text.setContent(`
 # 🚨 **BOOSTIFY RULES**
 
 @everyone
@@ -40,21 +40,26 @@ const container = new ContainerBuilder()
 
 ━━━━━━━━━━━━━━━━━━━━
 `)
-  )
+      )
 
-  // الصورة
-  .addMediaGalleryComponents(media =>
-    media.addItems(
-      new MediaGalleryItemBuilder().setURL("رابط_الصورة_هنا")
-    )
-  )
+      // الصورة
+      .addMediaGalleryComponents(media =>
+        media.addItems(
+          new MediaGalleryItemBuilder().setURL(BANNER_URL)
+        )
+      )
 
-  // الحقوق تحت الصورة
-  .addTextDisplayComponents(text =>
-    text.setContent(`
+      // الحقوق
+      .addTextDisplayComponents(text =>
+        text.setContent(`
 © **All rights reserved to Boostify**
 `)
-  );
+      );
+
+    await message.channel.send({
+      components: [container],
+      flags: MessageFlags.IsComponentsV2
+    });
 
   });
 
