@@ -310,15 +310,45 @@ if (interaction.isButton() && interaction.customId.startsWith("close_")) {
     return interaction.editReply({ content: "❌ You can't close this ticket." });
   }
 
-  await interaction.channel.setParent(CLOSED_CATEGORY_ID);
+// نقل التيكت
+await interaction.channel.setParent(CLOSED_CATEGORY_ID);
 
-  await interaction.channel.permissionOverwrites.edit(data.customer, {
-    SendMessages: false
-  });
+// منع العميل من الكتابة
+await interaction.channel.permissionOverwrites.edit(data.customer, {
+  SendMessages: false
+});
 
-  return interaction.editReply({
-    content: "🔒 Ticket moved to Closed category."
-  });
+// تعطيل زر Close
+const disabledCloseRow = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId(`close_${id}`)
+    .setLabel("🔒 Closed")
+    .setStyle(ButtonStyle.Danger)
+    .setDisabled(true)
+);
+
+// زر الفيدباك
+const feedbackRow = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId("open_rating")
+    .setLabel("⭐ Leave Feedback")
+    .setStyle(ButtonStyle.Success)
+);
+
+// تعديل الرسالة الأصلية
+await interaction.message.edit({
+  components: [disabledCloseRow]
+});
+
+// إرسال رسالة الفيدباك
+await interaction.channel.send({
+  content: `<@${data.customer}> Your order is completed!\nPlease leave a feedback ⭐`,
+  components: [feedbackRow]
+});
+
+return interaction.editReply({
+  content: "🔒 Ticket closed & feedback button sent."
+});
 }
 
 // ===== MANAGE =====
