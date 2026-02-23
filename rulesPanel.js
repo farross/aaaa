@@ -15,64 +15,47 @@ module.exports = (client) => {
     if (message.author.bot) return;
     if (message.content !== "!setup-rules") return;
 
-    const container = new ContainerBuilder()
+const container = new ContainerBuilder()
 
-      // العنوان الكبير
-      .addTextDisplayComponents(text =>
-        text.setContent(
-`# 📜 قوانين Boostify
-### يرجى قراءة القوانين بعناية قبل فتح أي طلب
-`
-        )
-      )
-
-      .addSeparatorComponents(sep =>
-        sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-      )
-
-      // القوانين
-.addTextDisplayComponents(text =>
-  text.setContent(
-`# 🚨 **BOOSTIFY RULES**
+  // العنوان والقوانين
+  .addTextDisplayComponents(text =>
+    text.setContent(`
+# 🚨 **BOOSTIFY RULES**
 
 @everyone
 
 ━━━━━━━━━━━━━━━━━━━━
 
 🔹 • **الاحترام واجب**
-يمنع تمامًا السب، الشتم، أو العنصرية تجاه أي شخص داخل السيرفر.
+يمنع تمامًا السب أو الشتم أو العنصرية داخل السيرفر.
 
 🔹 • **ممنوع الإعلانات**
-يُحظر نشر روابط أو الإعلان عن أي سيرفرات، متاجر، أو خدمات أخرى بدون إذن مسبق من الإدارة.
+يُحظر نشر روابط أو الإعلان عن أي خدمات بدون إذن الإدارة.
 
 🔹 • **استخدام الشاتات المخصصة**
-لكل شات غرض محدد، يرجى الالتزام بموضوع الشات وعدم الخروج عنه.
+لكل شات غرض محدد، يرجى الالتزام بموضوعه.
 
 🔹 • **الخصوصية**
-يمنع نشر أو طلب أي معلومات شخصية تخصك أو تخص غيرك داخل السيرفر.
+يمنع نشر أي معلومات شخصية داخل السيرفر.
 
 ━━━━━━━━━━━━━━━━━━━━
-
-© **All rights reserved to Boostify**
-`
+`)
   )
-)
 
-      .addSeparatorComponents(sep =>
-        sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-      )
+  // الصورة
+  .addMediaGalleryComponents(media =>
+    media.addItems(
+      new MediaGalleryItemBuilder().setURL("رابط_الصورة_هنا")
+    )
+  )
 
-      // البانر الكبير
-      .addMediaGalleryComponents(media =>
-        media.addItems(
-          new MediaGalleryItemBuilder().setURL(BANNER_URL)
-        )
-      );
-
-    await message.channel.send({
-      components: [container],
-      flags: MessageFlags.IsComponentsV2
-    });
+  // الحقوق تحت الصورة
+  .addTextDisplayComponents(text =>
+    text.setContent(`
+© **All rights reserved to Boostify**
+`)
+  );
+🎯 النتيجة
 
   });
 
