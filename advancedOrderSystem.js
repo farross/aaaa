@@ -192,12 +192,6 @@ if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
   if (data.status === "accepted")
     return interaction.editReply({ content: "❌ الطلب تم قبوله بالفعل.", ephemeral: true });
 
-  if (interaction.user.id !== data.customer)
-    return interaction.editReply({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
-
-  if (!interaction.member.roles.cache.has(COMMUNITY_ROLE_ID))
-    return interaction.editReply({ content: "❌ لازم يكون معاك رول Community.", ephemeral: true });
-
   data.status = "accepted";
   saveOrders();
 
