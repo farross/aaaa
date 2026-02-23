@@ -152,9 +152,9 @@ module.exports = (client) => {
 ${service}
 \`\`\`
 
-💰 السعر: ${price}
-🆔 رقم الطلب: #${orderNumber}
-👤 العميل: <@${interaction.user.id}>`
+💰 **price**
+🆔 **orderNumber**
+👤 **seller**: <@${interaction.user.id}>`
           )
         );
 
