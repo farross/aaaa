@@ -5,7 +5,8 @@ const {
   TextInputStyle,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  EmbedBuilder
 } = require('discord.js');
 
 const fs = require('fs');
@@ -127,52 +128,34 @@ const avatarURL = interaction.user.displayAvatarURL({
 // تحويل الرقم لنجوم
 const starsVisual = "⭐".repeat(parseInt(stars)) + "☆".repeat(5 - parseInt(stars));
 
-const container = new ContainerBuilder()
+const avatarURL = interaction.user.displayAvatarURL({
+  size: 256,
+  extension: "png"
+});
 
-  // ===== العنوان فوق =====
-  .addTextDisplayComponents(text =>
-    text.setContent(
-`## 💬 NEW FEEDBACK FROM <@${interaction.user.id}>`
-    )
-  )
+// تحويل الرقم لنجوم
+const starsVisual = "⭐".repeat(parseInt(stars)) + "☆".repeat(5 - parseInt(stars));
 
-  // ===== صورة البروفايل =====
-  .addMediaGalleryComponents(media =>
-    media.addItems(
-      new MediaGalleryItemBuilder().setURL(avatarURL)
-    )
-  )
-
-  .addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-  )
-
-  // ===== النجوم والفيدباك =====
-  .addTextDisplayComponents(text =>
-    text.setContent(
-`⭐ **Rating:** ${starsVisual}
+const embed = new EmbedBuilder()
+  .setColor("#5865F2") // لون احترافي
+  .setAuthor({
+    name: `NEW FEEDBACK FROM ${interaction.user.username}`,
+    iconURL: avatarURL
+  })
+  .setDescription(
+`**Rating:** ${starsVisual}
 
 📝 **Feedback**
 \`\`\`
 ${feedback}
 \`\`\``
-    )
   )
-
-  .addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-  )
-
-  // ===== البانر تحت =====
-  .addMediaGalleryComponents(media =>
-    media.addItems(
-      new MediaGalleryItemBuilder().setURL(BANNER_URL)
-    )
-  );
+  .setImage(BANNER_URL) // البانر تحت
+  .setTimestamp();
 
 await feedbackChannel.send({
-  components: [container],
-  flags: MessageFlags.IsComponentsV2
+  content: `<@${interaction.user.id}>`, // منشن فوق
+  embeds: [embed]
 });
 
       return interaction.reply({
