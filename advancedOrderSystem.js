@@ -151,9 +151,9 @@ ${service}
         )
         .addTextDisplayComponents(text =>
           text.setContent(
-`💰 **Price**
-🆔  **OrderNumber**
-👤  **Seller** <@${interaction.user.id}>`
+`💰 **Price:**
+🆔  **Order ID:**
+👤  **Seller:** <@${interaction.user.id}>`
           )
         );
 
@@ -264,9 +264,9 @@ ${data.service}
     )
     .addTextDisplayComponents(text =>
       text.setContent(
-`💰 السعر: ${data.price}
-🆔 رقم الطلب: #${id}
-👤 العميل: <@${data.customer}>`
+`💰 **Price:** ${data.price}
+🆔 **Order ID:** #${id}
+👤 **Seller:** <@${data.customer}>`
       )
     );
 
