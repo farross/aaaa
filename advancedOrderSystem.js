@@ -180,6 +180,8 @@ ${service}
 // ===== ACCEPT (مضاد سبام + يقفل الزر) =====
 if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
 
+  await interaction.deferReply({ ephemeral: true }); // 👈 هنا تحطها
+
   const id = interaction.customId.split("_")[1];
   const data = orderData.orders[id];
 
@@ -282,8 +284,41 @@ await ticketChannel.send({
   components: [ticketContainer, closeRow],
   flags: MessageFlags.IsComponentsV2
 });
+
+return interaction.editReply({
+  content: `✅ Ticket created: ${ticketChannel}`
+});
+
 }
 
+    // ===== CLOSE =====
+if (interaction.isButton() && interaction.customId.startsWith("close_")) {
+
+  await interaction.deferReply({ ephemeral: true });
+
+  const id = interaction.customId.split("_")[1];
+  const data = orderData.orders[id];
+
+  if (!data)
+    return interaction.editReply({ content: "❌ Ticket not found." });
+
+  if (
+    interaction.user.id !== data.customer &&
+    !interaction.member.roles.cache.has(COMMUNITY_ROLE_ID)
+  ) {
+    return interaction.editReply({ content: "❌ You can't close this ticket." });
+  }
+
+  await interaction.channel.setParent(CLOSED_CATEGORY_ID);
+
+  await interaction.channel.permissionOverwrites.edit(data.customer, {
+    SendMessages: false
+  });
+
+  return interaction.editReply({
+    content: "🔒 Ticket moved to Closed category."
+  });
+}
 
     // ===== CANCEL =====
     if (interaction.isButton() && interaction.customId.startsWith("cancel_")) {
