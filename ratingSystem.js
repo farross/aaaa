@@ -10,7 +10,7 @@ const {
 
 const fs = require('fs');
 
-const FEEDBACK_CHANNEL_ID = "حط_ايدي_روم_الفيدباك";
+const FEEDBACK_CHANNEL_ID = "1475373292708954286";
 
 let ratingData = { ratings: [] };
 
@@ -117,7 +117,7 @@ module.exports = (client) => {
 
     const { ContainerBuilder, SeparatorSpacingSize, MediaGalleryItemBuilder, MessageFlags } = require('discord.js');
 
-const BANNER_URL = "حط_لينك_البانر_هنا";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475369014678257755/Hamster_Dancing_GIF.gif?ex=699d3bf8&is=699bea78&hm=62031b25708d41fb85b53fef276676212aed7cb6bf80d1ed94b3ffe453f8eb9b&";
 
 const container = new ContainerBuilder()
 
