@@ -55,7 +55,6 @@ const container = new ContainerBuilder()
 © **All rights reserved to Boostify**
 `)
   );
-🎯 النتيجة
 
   });
 
