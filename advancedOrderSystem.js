@@ -279,54 +279,8 @@ ${data.service}
     content: `✅ تم فتح التيكيت: ${ticketChannel}`,
     ephemeral: true
   });
-}
 
-      // نفس شكل رسالة الأوردر داخل التيكيت
-      const ticketContainer = new ContainerBuilder()
-
-        .addMediaGalleryComponents(media =>
-          media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
-        )
-
-        .addSeparatorComponents(sep =>
-          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-        )
-
-        .addTextDisplayComponents(text =>
-          text.setContent(
-`## 🎫 ORDER TICKET
-
-### 📦 تفاصيل الطلب
-\`\`\`
-${data.service}
-\`\`\``
-          )
-        );
-
-      if (data.image && data.image.startsWith("http")) {
-        ticketContainer.addMediaGalleryComponents(media =>
-          media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
-        );
-      }
-
-      ticketContainer
-        .addSeparatorComponents(sep =>
-          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-        )
-        .addTextDisplayComponents(text =>
-          text.setContent(
-`💰 **Price** ${data.price}
-🆔 **OrderNumber** #${id}
-👤 **Seller** <@${data.customer}>`
-          )
-        );
-
-      await ticketChannel.send({
-        components: [ticketContainer],
-        flags: MessageFlags.IsComponentsV2
-      });
-
-   await interaction.message.edit({
+       await interaction.message.edit({
   components: [disabledRow],
   flags: MessageFlags.IsComponentsV2
 });
