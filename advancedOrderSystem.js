@@ -1,4 +1,5 @@
 // =============================
+// استدعاء المكتبات
 // =============================
 const {
   ActionRowBuilder,
@@ -230,8 +231,74 @@ ${service}
         components: [interaction.message.components[0], disabledRow]
       });
 
-}
+      // إنشاء التيكيت
+      const ticketChannel = await interaction.guild.channels.create({
+        name: `order-${id}`,
+        type: 0,
+        parent: TICKET_CATEGORY_ID,
+        permissionOverwrites: [
+          { id: interaction.guild.roles.everyone, deny: ['ViewChannel'] },
+          { id: data.customer, allow: ['ViewChannel', 'SendMessages'] },
+          { id: COMMUNITY_ROLE_ID, allow: ['ViewChannel', 'SendMessages'] }
+        ]
+      });
 
+      const ticketButtons = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`close_${id}`)
+          .setLabel("🔒 Close")
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId("open_rating")
+          .setLabel("⭐ Feedback")
+          .setStyle(ButtonStyle.Success)
+      );
+
+      await ticketChannel.send({
+        content: `🎫 Order Ticket for <@${data.customer}>`,
+        components: [ticketButtons]
+      });
+
+      return interaction.editReply({
+        content: `✅ Ticket created: ${ticketChannel}`
+      });
+    }
+
+    // =============================
+    // إغلاق التيكيت
+    // =============================
+    if (interaction.isButton() && interaction.customId.startsWith("close_")) {
+
+      await interaction.deferReply({ ephemeral: true });
+
+      const id = interaction.customId.split("_")[1];
+      const data = orderData.orders[id];
+
+      if (!data)
+        return interaction.editReply({ content: "❌ Ticket not found." });
+
+      await interaction.channel.setParent(CLOSED_CATEGORY_ID);
+
+      const disabledButtons = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`close_${id}`)
+          .setLabel("🔒 Closed")
+          .setStyle(ButtonStyle.Danger)
+          .setDisabled(true),
+        new ButtonBuilder()
+          .setCustomId("open_rating")
+          .setLabel("⭐ Feedback")
+          .setStyle(ButtonStyle.Success)
+      );
+
+      await interaction.message.edit({
+        components: [disabledButtons]
+      });
+
+      return interaction.editReply({
+        content: "🔒 Ticket closed successfully."
+      });
+    }
 // =============================
 // إدارة الطلب (Manage)
 // =============================
@@ -301,77 +368,7 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_order_"
     content: "✅ Order updated successfully.",
     ephemeral: true
   });
-} 
-  
-      // إنشاء التيكيت
-      const ticketChannel = await interaction.guild.channels.create({
-        name: `order-${id}`,
-        type: 0,
-        parent: TICKET_CATEGORY_ID,
-        permissionOverwrites: [
-          { id: interaction.guild.roles.everyone, deny: ['ViewChannel'] },
-          { id: data.customer, allow: ['ViewChannel', 'SendMessages'] },
-          { id: COMMUNITY_ROLE_ID, allow: ['ViewChannel', 'SendMessages'] }
-        ]
-      });
-
-      const ticketButtons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`close_${id}`)
-          .setLabel("🔒 Close")
-          .setStyle(ButtonStyle.Danger),
-        new ButtonBuilder()
-          .setCustomId("open_rating")
-          .setLabel("⭐ Feedback")
-          .setStyle(ButtonStyle.Success)
-      );
-
-      await ticketChannel.send({
-        content: `🎫 Order Ticket for <@${data.customer}>`,
-        components: [ticketButtons]
-      });
-
-      return interaction.editReply({
-        content: `✅ Ticket created: ${ticketChannel}`
-      });
-    }
-
-    // =============================
-    // إغلاق التيكيت
-    // =============================
-    if (interaction.isButton() && interaction.customId.startsWith("close_")) {
-
-      await interaction.deferReply({ ephemeral: true });
-
-      const id = interaction.customId.split("_")[1];
-      const data = orderData.orders[id];
-
-      if (!data)
-        return interaction.editReply({ content: "❌ Ticket not found." });
-
-      await interaction.channel.setParent(CLOSED_CATEGORY_ID);
-
-      const disabledButtons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`close_${id}`)
-          .setLabel("🔒 Closed")
-          .setStyle(ButtonStyle.Danger)
-          .setDisabled(true),
-        new ButtonBuilder()
-          .setCustomId("open_rating")
-          .setLabel("⭐ Feedback")
-          .setStyle(ButtonStyle.Success)
-      );
-
-      await interaction.message.edit({
-        components: [disabledButtons]
-      });
-
-      return interaction.editReply({
-        content: "🔒 Ticket closed successfully."
-      });
-    }
-
+}
   });
 
 };
