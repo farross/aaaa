@@ -255,7 +255,7 @@ ${data.service}
       )
     );
 
-  if (data.image && data.image.startsWith("http")) {
+  if (image && /^https?:\/\/.+\.(png|jpg|jpeg|gif|webp)$/i.test(image)) {
     ticketContainer.addMediaGalleryComponents(media =>
       media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
     );
