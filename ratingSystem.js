@@ -120,10 +120,6 @@ module.exports = (client) => {
 
 const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475378885570072730/Black_Geometric_Minimalist_Gaming_Logo_-_3_-_Edited.jpg?ex=699d4529&is=699bf3a9&hm=5ea707ab42f31bd45969992ccc676599749ff36c50227c87197071f8c3075bc1&";
 
-const avatarURL = interaction.user.displayAvatarURL({
-  size: 128,
-  extension: "png"
-});
 
 // تحويل الرقم لنجوم
 const starsVisual = "⭐".repeat(parseInt(stars)) + "☆".repeat(5 - parseInt(stars));
