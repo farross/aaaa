@@ -12,10 +12,10 @@ const {
 } = require('discord.js');
 const fs = require('fs');
 
-const ORDER_CHANNEL_ID = "PUT_ORDER_CHANNEL_ID";
-const GAMERS_ROLE_ID = "PUT_ROLE_ID";
-const CATEGORY_ID = "PUT_TICKET_CATEGORY_ID";
-const BANNER_URL = "PUT_BANNER_URL";
+const ORDER_CHANNEL_ID = "1474602944983990290";
+const GAMERS_ROLE_ID = "1474602944983990290";
+const CATEGORY_ID = "1474602944983990290";
+const BANNER_URL = "https://i.imgur.com/aRB6qJZ.jpg";
 
 const COOLDOWN = 60000;
 const cooldowns = new Map();
