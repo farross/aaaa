@@ -176,36 +176,110 @@ ${service}
       return interaction.reply({ content: "✅ تم إرسال طلبك!", ephemeral: true });
     }
 
-    // ===== ACCEPT =====
-    if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
+// ===== ACCEPT (مضاد سبام + يقفل الزر) =====
+if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
 
-      const id = interaction.customId.split("_")[1];
-      const data = orderData.orders[id];
+  const id = interaction.customId.split("_")[1];
+  const data = orderData.orders[id];
 
-      if (!data) return interaction.reply({ content: "❌ الطلب غير موجود.", ephemeral: true });
-      if (interaction.user.id !== data.customer)
-        return interaction.reply({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
+  if (!data)
+    return interaction.reply({ content: "❌ الطلب غير موجود.", ephemeral: true });
 
-      if (!interaction.member.roles.cache.has(COMMUNITY_ROLE_ID))
-        return interaction.reply({ content: "❌ لازم يكون معاك رول Community.", ephemeral: true });
+  // لو اتقبل قبل كده
+  if (data.status === "accepted")
+    return interaction.reply({ content: "❌ الطلب تم قبوله بالفعل.", ephemeral: true });
 
-      data.status = "accepted";
-      saveOrders();
+  if (interaction.user.id !== data.customer)
+    return interaction.reply({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
 
-      const cleanUsername = interaction.user.username
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '');
+  if (!interaction.member.roles.cache.has(COMMUNITY_ROLE_ID))
+    return interaction.reply({ content: "❌ لازم يكون معاك رول Community.", ephemeral: true });
 
-      const ticketChannel = await interaction.guild.channels.create({
-        name: `${cleanUsername}-${id}`,
-        type: 0,
-        parent: TICKET_CATEGORY_ID,
-        permissionOverwrites: [
-          { id: interaction.guild.roles.everyone, deny: ['ViewChannel'] },
-          { id: data.customer, allow: ['ViewChannel', 'SendMessages'] },
-          { id: COMMUNITY_ROLE_ID, allow: ['ViewChannel', 'SendMessages'] }
-        ]
-      });
+  data.status = "accepted";
+  saveOrders();
+
+  // ===== قفل الأزرار =====
+  const disabledRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`accept_${id}`)
+      .setLabel("Accepted ✅")
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(true),
+    new ButtonBuilder()
+      .setCustomId(`cancel_${id}`)
+      .setLabel("Cancel")
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(true)
+  );
+
+  // تحديث رسالة الأوردر الأصلية
+  await interaction.message.edit({
+    components: [interaction.message.components[0], disabledRow]
+  });
+
+  // ===== إنشاء التيكيت =====
+  const cleanUsername = interaction.user.username
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+  const ticketChannel = await interaction.guild.channels.create({
+    name: `${cleanUsername}-${id}`,
+    type: 0,
+    parent: TICKET_CATEGORY_ID,
+    permissionOverwrites: [
+      { id: interaction.guild.roles.everyone, deny: ['ViewChannel'] },
+      { id: data.customer, allow: ['ViewChannel', 'SendMessages'] },
+      { id: COMMUNITY_ROLE_ID, allow: ['ViewChannel', 'SendMessages'] }
+    ]
+  });
+
+  // نفس رسالة الأوردر داخل التيكيت
+  const ticketContainer = new ContainerBuilder()
+    .addMediaGalleryComponents(media =>
+      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+    )
+    .addSeparatorComponents(sep =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+    )
+    .addTextDisplayComponents(text =>
+      text.setContent(
+`## 🎫 ORDER TICKET
+
+### 📦 تفاصيل الطلب
+\`\`\`
+${data.service}
+\`\`\``
+      )
+    );
+
+  if (data.image && data.image.startsWith("http")) {
+    ticketContainer.addMediaGalleryComponents(media =>
+      media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
+    );
+  }
+
+  ticketContainer
+    .addSeparatorComponents(sep =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+    )
+    .addTextDisplayComponents(text =>
+      text.setContent(
+`💰 السعر: ${data.price}
+🆔 رقم الطلب: #${id}
+👤 العميل: <@${data.customer}>`
+      )
+    );
+
+  await ticketChannel.send({
+    components: [ticketContainer],
+    flags: MessageFlags.IsComponentsV2
+  });
+
+  return interaction.reply({
+    content: `✅ تم فتح التيكيت: ${ticketChannel}`,
+    ephemeral: true
+  });
+}
 
       // نفس شكل رسالة الأوردر داخل التيكيت
       const ticketContainer = new ContainerBuilder()
