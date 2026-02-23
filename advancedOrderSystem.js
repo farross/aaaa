@@ -1,191 +1,54 @@
 const {
+  Client,
+  GatewayIntentBits,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  PermissionsBitField,
-  ChannelType,
   Events,
   ContainerBuilder,
   SeparatorSpacingSize,
   MediaGalleryItemBuilder,
   MessageFlags
-} = require("discord.js");
-const fs = require("fs");
+} = require('discord.js');
 
-// ====== CONFIG ======
+const fs = require('fs');
+
 const ORDER_CHANNEL_ID = "1474602944983990290";
-const GAMERS_ROLE_ID = "1474602944983990290";
-const TICKET_CATEGORY_ID = "1474602944983990290";
+const COMMUNITY_ROLE_ID = "PUT_COMMUNITY_ROLE_ID";
+const TICKET_CATEGORY_ID = "1474602945579450458";
+const LOG_CHANNEL_ID = "PUT_LOG_CHANNEL_ID";
 
-const DEFAULT_BANNER =
-  "https://cdn.discordapp.com/attachments/976992409219133530/1475316403241222214/Black_Geometric_Minimalist_Gaming_Logo.jpg";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/976992409219133530/1475316403241222214/Black_Geometric_Minimalist_Gaming_Logo.jpg?ex=699d0af8&is=699bb978&hm=8adc7891bc6c866e6e2427b7b7550d215561ebc66199b145daddebabc1566ac2&";
+const ICON_URL = "https://media.discordapp.net/attachments/1474602944983990290/1475337012411105460/Vita_Spray_Blueprint.jpg?ex=699d1e2a&is=699bccaa&hm=e2e3aab37846afcb3e85e1d3ed56462ddfc84a760715c01cbf383b1721b9c947&=&format=webp";
 
-const DB_FILE = "./orders.json";
-const COOLDOWN = 60_000;
+const COOLDOWN = 60000;
+
+let orderData = { count: 0, orders: {} };
+
+if (fs.existsSync('./orders.json')) {
+  orderData = JSON.parse(fs.readFileSync('./orders.json'));
+}
+
+function saveOrders() {
+  fs.writeFileSync('./orders.json', JSON.stringify(orderData, null, 2));
+}
+
 const cooldowns = new Map();
 
-// ====== DB ======
-let db = { count: 0, config: { image: DEFAULT_BANNER }, orders: {} };
-
-function loadDb() {
-  if (!fs.existsSync(DB_FILE)) return;
-  try {
-    const parsed = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
-    db.count = parsed.count ?? 0;
-    db.config = { image: parsed.config?.image ?? DEFAULT_BANNER };
-    db.orders = parsed.orders ?? {};
-  } catch (e) {
-    console.error("Failed to read orders.json:", e);
-  }
-}
-function saveDb() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-}
-loadDb();
-
-function isAdmin(member) {
-  return member?.permissions?.has(PermissionsBitField.Flags.Administrator);
-}
-
-function canManage(interaction, order) {
-  return interaction.user.id === order.seller || isAdmin(interaction.member);
-}
-
-function buildContainer(status, orderId, order) {
-  const img = db.config.image || DEFAULT_BANNER;
-
-  const header =
-    status === "completed"
-      ? "## ✅ ORDER COMPLETED"
-      : status === "active"
-        ? "## ⚡ ORDER ACTIVE"
-        : "## 🖤 BOOSTFIY STORE";
-
-  // Strikethrough يشتغل كويس خارج codeblock
-  const details =
-    status === "completed"
-      ? `~~${order.service}~~`
-      : `\`\`\`\n${order.service}\n\`\`\``;
-
-  const sellerLine = order.seller ? `<@${order.seller}>` : "None";
-
-  const content =
-`${header}
-
-👤 **Customer:** <@${order.customer}>
-
-📦 **Order Details**
-${details}
-
-💰 **Price:** ${order.price}
-🔑 **Code:** ${order.code || "None"}
-
-🆔 **Order ID:** #${orderId}
-👤 **Seller:** ${sellerLine}`;
-
-  return new ContainerBuilder()
-    .addMediaGalleryComponents((media) =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(img))
-    )
-    .addSeparatorComponents((sep) =>
-      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-    )
-    .addTextDisplayComponents((text) => text.setContent(content));
-}
-
-function buildRow(status, orderId) {
-  if (status === "completed") return null;
-
-  if (status === "active") {
-    return new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`complete_${orderId}`)
-        .setLabel("Complete")
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`manage_${orderId}`)
-        .setLabel("Manage")
-        .setStyle(ButtonStyle.Secondary)
-    );
-  }
-
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`collect_${orderId}`)
-      .setLabel("Collect")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId(`manage_${orderId}`)
-      .setLabel("Manage")
-      .setStyle(ButtonStyle.Secondary)
-  );
-}
-
-async function updateOrderMessage(guild, orderId) {
-  const order = db.orders[orderId];
-  if (!order?.orderChannelId || !order?.orderMessageId) return;
-
-  const ch = await guild.channels.fetch(order.orderChannelId).catch(() => null);
-  if (!ch || !("messages" in ch)) return;
-
-  const msg = await ch.messages.fetch(order.orderMessageId).catch(() => null);
-  if (!msg) return;
-
-  const container = buildContainer(order.status, orderId, order);
-  const row = buildRow(order.status, orderId);
-
-  const content =
-    order.status === "pending"
-      ? `📢 **NEW ORDER** <@&${GAMERS_ROLE_ID}>`
-      : order.status === "active"
-        ? `📌 **ORDER CLAIMED** by <@${order.seller}>`
-        : `✅ **ORDER COMPLETED**`;
-
-  await msg.edit({
-    content,
-    components: row ? [container, row] : [container],
-    flags: MessageFlags.IsComponentsV2
-  });
-}
-
-async function lockTicket(guild, order) {
-  if (!order.ticketChannelId) return;
-  const ch = await guild.channels.fetch(order.ticketChannelId).catch(() => null);
-  if (!ch) return;
-
-  await ch.permissionOverwrites.edit(order.customer, { SendMessages: false }).catch(() => null);
-  if (order.seller) {
-    await ch.permissionOverwrites.edit(order.seller, { SendMessages: false }).catch(() => null);
-  }
-}
 module.exports = (client) => {
+
+  // =============================
+  // !setup-order
+  // =============================
   client.on(Events.MessageCreate, async (message) => {
+
     if (message.author.bot) return;
 
-    // !setup-order [imageUrl]
-    if (message.content.startsWith("!setup-order")) {
-      const imageUrl = message.content.split(/\s+/)[1];
-      if (imageUrl) db.config.image = imageUrl;
-      saveDb();
+    if (message.content === "!setup-order") {
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("start_order")
-          .setLabel("🚀 Start Order")
-          .setStyle(ButtonStyle.Primary)
-      );
-
-      return message.channel.send({
-        content: "تم إعداد نظام الطلبات.\nاضغط لبدء طلب جديد 👇",
-        components: [row]
-      });
-    }
-
-    // !order => يبعت Start فقط
-    if (message.content === "!order") {
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("start_order")
@@ -200,153 +63,210 @@ module.exports = (client) => {
     }
   });
 
+  // =============================
+  // Interactions
+  // =============================
   client.on(Events.InteractionCreate, async (interaction) => {
-    // ===== START BUTTON =====
+
+    // ===== Start Order =====
     if (interaction.isButton() && interaction.customId === "start_order") {
-      const until = cooldowns.get(interaction.user.id) || 0;
-      const remaining = until - Date.now();
-      if (remaining > 0) {
-        return interaction.reply({
-          content: `⏳ استنى ${Math.ceil(remaining / 1000)} ثانية`,
-          ephemeral: true
-        });
+
+      if (cooldowns.has(interaction.user.id)) {
+        const remaining = (cooldowns.get(interaction.user.id) - Date.now()) / 1000;
+        if (remaining > 0)
+          return interaction.reply({ content: `⏳ استنى ${remaining.toFixed(0)} ثانية`, ephemeral: true });
       }
+
       cooldowns.set(interaction.user.id, Date.now() + COOLDOWN);
 
       const modal = new ModalBuilder()
         .setCustomId("order_modal")
-        .setTitle("New Order");
+        .setTitle("Create Order");
+
+      const serviceInput = new TextInputBuilder()
+        .setCustomId("service")
+        .setLabel("تفاصيل الطلب")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
+
+      const priceInput = new TextInputBuilder()
+        .setCustomId("price")
+        .setLabel("السعر")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
 
       modal.addComponents(
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId("service")
-            .setLabel("Order Details")
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true)
-        ),
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId("price")
-            .setLabel("Price")
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true)
-        ),
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId("code")
-            .setLabel("Code / Notes (optional)")
-            .setStyle(TextInputStyle.Short)
-            .setRequired(false)
-        )
+        new ActionRowBuilder().addComponents(serviceInput),
+        new ActionRowBuilder().addComponents(priceInput)
       );
 
       return interaction.showModal(modal);
     }
 
-    // ===== MODAL SUBMIT =====
+    // ===== Create Order =====
     if (interaction.isModalSubmit() && interaction.customId === "order_modal") {
-      db.count++;
-      const orderId = String(db.count);
+
+      orderData.count++;
+      const orderNumber = orderData.count;
 
       const service = interaction.fields.getTextInputValue("service");
       const price = interaction.fields.getTextInputValue("price");
-      const code = interaction.fields.getTextInputValue("code") || "None";
 
-      const ordersChannel = await interaction.guild.channels
-        .fetch(ORDER_CHANNEL_ID)
-        .catch(() => null);
-
-      if (!ordersChannel) {
-        return interaction.reply({ content: "❌ روم الطلبات غير موجودة.", ephemeral: true });
-      }
-
-      db.orders[orderId] = {
-        customer: interaction.user.id,
+      orderData.orders[orderNumber] = {
         service,
         price,
-        code,
-        seller: null,
         status: "pending",
-        ticketChannelId: null,
-        orderChannelId: ORDER_CHANNEL_ID,
-        orderMessageId: null
+        customer: interaction.user.id
       };
-      saveDb();
 
-      const container = buildContainer("pending", orderId, db.orders[orderId]);
-      const row = buildRow("pending", orderId);
+      saveOrders();
 
-      const sent = await ordersChannel.send({
-        content: `📢 **NEW ORDER** <@&${GAMERS_ROLE_ID}>`,
+      const orderChannel = await interaction.guild.channels.fetch(ORDER_CHANNEL_ID);
+
+      const container = new ContainerBuilder()
+        .addMediaGalleryComponents(media =>
+          media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+        )
+        .addSeparatorComponents(sep =>
+          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+        )
+        .addMediaGalleryComponents(media =>
+          media.addItems(new MediaGalleryItemBuilder().setURL(ICON_URL))
+        )
+        .addTextDisplayComponents(text =>
+          text.setContent(
+`## 📢 NEW ORDER
+
+📦 ${service}
+
+💰 السعر: ${price}
+🆔 رقم الطلب: #${orderNumber}
+👤 العميل: <@${interaction.user.id}>`
+          )
+        );
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`accept_${orderNumber}`)
+          .setLabel("Accept")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`cancel_${orderNumber}`)
+          .setLabel("Cancel")
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      await orderChannel.send({
         components: [container, row],
         flags: MessageFlags.IsComponentsV2
       });
 
-      db.orders[orderId].orderMessageId = sent.id;
-      saveDb();
-
-      return interaction.reply({
-        content: `✅ تم إرسال طلبك! رقم الطلب: #${orderId}`,
-        ephemeral: true
-      });
+      return interaction.reply({ content: "✅ تم إرسال طلبك!", ephemeral: true });
     }
 
-    // ===== COLLECT =====
-    if (interaction.isButton() && interaction.customId.startsWith("collect_")) {
-      const orderId = interaction.customId.split("_")[1];
-      const order = db.orders[orderId];
+    // ===== ACCEPT =====
+    if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
 
-      if (!order) return interaction.reply({ content: "❌ الطلب غير موجود.", ephemeral: true });
-      if (order.status !== "pending") return interaction.reply({ content: "❌ الطلب مش متاح للاستلام.", ephemeral: true });
-      if (order.seller) return interaction.reply({ content: "❌ الطلب اتاخد بالفعل.", ephemeral: true });
+      const id = interaction.customId.split("_")[1];
+      const data = orderData.orders[id];
 
-      order.seller = interaction.user.id;
-      order.status = "active";
-      saveDb();
+      if (!data) return interaction.reply({ content: "❌ الطلب غير موجود.", ephemeral: true });
+      if (interaction.user.id !== data.customer)
+        return interaction.reply({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
 
-      const ticket = await interaction.guild.channels.create({
-        name: `ticket-${orderId}`,
-        type: ChannelType.GuildText,
+      if (!interaction.member.roles.cache.has(COMMUNITY_ROLE_ID))
+        return interaction.reply({ content: "❌ لازم يكون معاك رول Community.", ephemeral: true });
+
+      data.status = "accepted";
+      saveOrders();
+
+      const cleanUsername = interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      const ticketChannel = await interaction.guild.channels.create({
+        name: `${cleanUsername}-${id}`,
+        type: 0,
         parent: TICKET_CATEGORY_ID,
         permissionOverwrites: [
-          { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-          { id: GAMERS_ROLE_ID, allow: [PermissionsBitField.Flags.ViewChannel] },
-          { id: order.customer, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-          { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
+          { id: interaction.guild.roles.everyone, deny: ['ViewChannel'] },
+          { id: data.customer, allow: ['ViewChannel', 'SendMessages'] },
+          { id: COMMUNITY_ROLE_ID, allow: ['ViewChannel', 'SendMessages'] }
         ]
       });
 
-      order.ticketChannelId = ticket.id;
-      saveDb();
-
-      await ticket.send(
-        `🎫 Ticket for Order #${orderId}\n` +
-        `👤 Customer: <@${order.customer}>\n` +
-        `🧑‍💻 Seller: <@${order.seller}>\n\n` +
-        `اكتبوا هنا واتفقوا على التفاصيل.\n` +
-        `لإنهاء الطلب اضغط **Complete** من رسالة الأوردر.`
+      const closeRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`close_${id}`)
+          .setLabel("🔒 Close Ticket")
+          .setStyle(ButtonStyle.Danger)
       );
 
-      await updateOrderMessage(interaction.guild, orderId);
+      await ticketChannel.send({
+        content: `مرحباً <@${data.customer}> 👋`,
+        components: [closeRow]
+      });
+
+      await interaction.message.edit({ components: [] });
 
       return interaction.reply({
-        content: `✅ تم استلام الطلب وفتح تيكت: <#${ticket.id}> (Seller: <@${interaction.user.id}>)`,
+        content: `✅ تم فتح التيكيت: ${ticketChannel}`,
         ephemeral: true
       });
     }
 
-    // ===== MANAGE (Panel) =====
-    if (interaction.isButton() && interaction.customId.startsWith("manage_")) {
-      const orderId = interaction.customId.split("_")[1];
-      const order = db.orders[orderId];
-      if (!order) return interaction.reply({ content: "❌ الطلب غير موجود.", ephemeral: true });
+    // ===== CANCEL =====
+    if (interaction.isButton() && interaction.customId.startsWith("cancel_")) {
 
-      // اسمح للإدمن أو السيلر الحالي
-      if (!canManage(interaction, order) && order.status !== "pending") {
-        return interaction.reply({ content: "❌ مفيش صلاحية.", ephemeral: true });
+      const id = interaction.customId.split("_")[1];
+      const data = orderData.orders[id];
+
+      if (!data) return interaction.reply({ content: "❌ الطلب غير موجود.", ephemeral: true });
+      if (interaction.user.id !== data.customer)
+        return interaction.reply({ content: "❌ مش انت صاحب الطلب.", ephemeral: true });
+
+      data.status = "cancelled";
+      saveOrders();
+
+      await interaction.message.edit({ components: [] });
+
+      return interaction.reply({ content: "❌ تم إلغاء الطلب.", ephemeral: true });
+    }
+
+    // ===== CLOSE TICKET =====
+    if (interaction.isButton() && interaction.customId.startsWith("close_")) {
+
+      const id = interaction.customId.split("_")[1];
+      const data = orderData.orders[id];
+
+      await interaction.reply({ content: "⏳ جاري الإغلاق...", ephemeral: true });
+
+      const messages = await interaction.channel.messages.fetch({ limit: 100 });
+      const sorted = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+
+      let transcript = `Transcript - Order #${id}\n\n`;
+
+      sorted.forEach(msg => {
+        transcript += `[${msg.author.tag}] : ${msg.content}\n`;
+      });
+
+      const logChannel = await interaction.guild.channels.fetch(LOG_CHANNEL_ID);
+
+      if (logChannel) {
+        logChannel.send({
+          files: [{
+            attachment: Buffer.from(transcript, "utf-8"),
+            name: `order-${id}-transcript.txt`
+          }]
+        });
       }
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(`unclaim_${orderId}`).setLabel("Unclaim").setStyle(ButtonStyle.Danger),
-        new ButtonBuilder().setCustomId(`close_${orderId}`).setLabel("Close Ticket").setStyle
+      data.status = "completed";
+      saveOrders();
+
+      setTimeout(() => {
+        interaction.channel.delete().catch(() => {});
+      }, 5000);
+    }
+
+  });
+
+};
