@@ -13,11 +13,13 @@ const client = new Client({
 require('./advancedOrderSystem')(client);
 require('./ratingSystem')(client);
 require('./rulesPanel')(client);
+require("./shopSystem")(client);
 
 client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
 client.login(process.env.TOKEN);
+
 
 
