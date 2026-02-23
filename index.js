@@ -37,74 +37,80 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-if (message.content.startsWith("!order")) {
+  if (message.content.startsWith("!order")) {
 
-  if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
-    return message.reply("❌ انت مش معاك صلاحية.");
+    if (!message.member.roles.cache.some(r => r.name === OWNER_ROLE_NAME))
+      return message.reply("❌ انت مش معاك صلاحية.");
 
-  const args = message.content.slice(7).split("|");
-  if (args.length < 3)
-    return message.reply("❌ استخدم:\n!order name | price$ | code");
+    const args = message.content.slice(7).split("|");
+    if (args.length < 3)
+      return message.reply("❌ استخدم:\n!order name | price$ | code");
 
-  const service = args[0].trim();
-  const price = args[1].trim();
-  const code = args[2].trim();
+    const service = args[0].trim();
+    const price = args[1].trim();
+    const code = args[2].trim();
 
-  orderCounter++;
+    orderCounter++;
 
-  orders[orderCounter] = {
-    service,
-    price,
-    code,
-    client: message.author.id,
-    seller: null,
-    messageId: null
-  };
+    orders[orderCounter] = {
+      service,
+      price,
+      code,
+      client: message.author.id,
+      seller: null,
+      messageId: null
+    };
 
-  // 👇 يخلي الاوردر ينزل في روم معينة
-  const ordersChannel = message.guild.channels.cache.find(
-    c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
-  );
+    const ordersChannel = message.guild.channels.cache.find(
+      c => c.name === "〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦"
+    );
 
-  if (!ordersChannel)return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
+    if (!ordersChannel)
+      return message.reply("❌ اعمل روم باسم 〘🤖〙𝗢𝗥𝗗𝗘𝗥𝗦");
 
-  const embed = new EmbedBuilder()
-    .setColor("#2b2d31")
-    .setDescription(
-`📢 **𝐍𝐄𝐖 𝐎𝐑𝐃𝐄𝐑** <@&${GAMERS_ROLE_ID}>
+    // 🖤 Dark Gaming Embed
+    const embed = new EmbedBuilder()
+      .setColor("#111214")
+      .setAuthor({
+        name: "🖤 BOOSTFIY"
+      })
+      .setDescription(
+`## 📢 NEW ORDER  <@&${GAMERS_ROLE_ID}>
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔸 Details: **${service}**
+> 🎮 **Service:** ${service}
 
-💰 Price: **${price}**
-🔑 Code: **${code}**
+> 💰 **Price:** ${price}  
+> 🔑 **Code:** ${code}
 
-💠 Order: **#${orderCounter}**
-👤 Seller: **None**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> 🆔 **Order ID:** #${orderCounter}  
+> 👤 **Seller:** None
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
-    )
-    .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
+      )
+      .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`collect_${orderCounter}`)
-      .setLabel("Collect")
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId(`manage_${orderCounter}`)
-      .setLabel("Manage")
-      .setStyle(ButtonStyle.Secondary)
-  );
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`collect_${orderCounter}`)
+        .setLabel("Collect")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`manage_${orderCounter}`)
+        .setLabel("Manage")
+        .setStyle(ButtonStyle.Secondary)
+    );
 
-  const msg = await ordersChannel.send({
-    embeds: [embed],
-    components: [row]
-  });
+    const msg = await ordersChannel.send({
+      embeds: [embed],
+      components: [row]
+    });
 
-  orders[orderCounter].messageId = msg.id;
-}
+    orders[orderCounter].messageId = msg.id;
+  }
 
   if (message.content === "!store") {
 
@@ -126,7 +132,6 @@ if (message.content.startsWith("!order")) {
 
 client.on('interactionCreate', async (interaction) => {
 
-  // ===== BUY =====
   if (interaction.isButton() && interaction.customId === "buy_start") {
 
     const menu = new ActionRowBuilder().addComponents(
@@ -146,7 +151,6 @@ client.on('interactionCreate', async (interaction) => {
     });
   }
 
-  // ===== SELECT MENU =====
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === "select_game") {
@@ -196,15 +200,28 @@ client.on('interactionCreate', async (interaction) => {
 
     const originalMsg = await interaction.channel.messages.fetch(data.messageId);
 
-    const updatedEmbed = new EmbedBuilder(originalMsg.embeds[0])
+    const updatedEmbed = new EmbedBuilder()
+      .setColor("#111214")
+      .setAuthor({
+        name: "🖤 BOOSTFIY"
+      })
       .setDescription(
-`🔸 ~~${data.service}~~
-💰 ~~${data.price}~~
-🔑 ~~${data.code}~~
+`## ⚡ ORDER COLLECTED
 
-🔹 **Order:** #${id}
-🔹 **Seller:** <@${data.seller}>`
-      );
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> 🎮 ~~${data.service}~~  
+> 💰 ~~${data.price}~~  
+> 🔑 ~~${data.code}~~
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> 🆔 **Order ID:** #${id}  
+> 👤 **Seller:** <@${data.seller}>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+      )
+      .setImage("https://cdn.discordapp.com/attachments/976992409219133530/1474879330147635350/1.png");
 
     const newRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -308,7 +325,3 @@ async function createShopTicket(interaction, service, price) {
 }
 
 client.login(process.env.TOKEN);
-
-
-
-
