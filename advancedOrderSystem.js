@@ -229,6 +229,76 @@ ${service}
       await interaction.message.edit({
         components: [interaction.message.components[0], disabledRow]
       });
+      // =============================
+// إدارة الطلب (Manage)
+// =============================
+if (interaction.isButton() && interaction.customId.startsWith("manage_")) {
+
+  const id = interaction.customId.split("_")[1];
+  const data = orderData.orders[id];
+
+  if (!data)
+    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
+
+  // السماح فقط للمانجر
+  if (!interaction.member.roles.cache.has(MANAGER_ROLE_ID))
+    return interaction.reply({ content: "❌ You don't have permission.", ephemeral: true });
+
+  const modal = new ModalBuilder()
+    .setCustomId(`edit_order_${id}`)
+    .setTitle("Edit Order");
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId("service")
+        .setLabel("Edit Service")
+        .setStyle(TextInputStyle.Paragraph)
+        .setValue(data.service)
+        .setRequired(true)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId("price")
+        .setLabel("Edit Price")
+        .setStyle(TextInputStyle.Short)
+        .setValue(data.price)
+        .setRequired(true)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId("image")
+        .setLabel("Edit Image URL")
+        .setStyle(TextInputStyle.Short)
+        .setValue(data.image || "")
+        .setRequired(false)
+    )
+  );
+
+  return interaction.showModal(modal);
+}
+      // =============================
+// تحديث بيانات الطلب
+// =============================
+if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_order_")) {
+
+  const id = interaction.customId.split("_")[2];
+  const data = orderData.orders[id];
+
+  if (!data)
+    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
+
+  data.service = interaction.fields.getTextInputValue("service");
+  data.price = interaction.fields.getTextInputValue("price");
+  data.image = interaction.fields.getTextInputValue("image") || null;
+
+  saveOrders();
+
+  return interaction.reply({
+    content: "✅ Order updated successfully.",
+    ephemeral: true
+  });
+}
 
       // إنشاء التيكيت
       const ticketChannel = await interaction.guild.channels.create({
