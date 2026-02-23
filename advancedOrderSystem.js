@@ -151,9 +151,9 @@ ${service}
         )
         .addTextDisplayComponents(text =>
           text.setContent(
-`💰 **Price:** ${data.price}
-🆔 **Order ID:** #${id}
-👤 **Seller:** <@${data.customer}>`
+`💰 **Price:** ${price}
+🆔 **Order ID:** #${orderNumber}
+👤 **Seller:** <@${interaction.user.id}>`
           )
         );
 
