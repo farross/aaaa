@@ -131,6 +131,7 @@ module.exports = (client) => {
 
         // العنوان
 // ================= CONTAINER =================
+// ================= CONTAINER =================
 const container = new ContainerBuilder()
 
   // العنوان الرئيسي
@@ -166,6 +167,11 @@ const container = new ContainerBuilder()
       new MediaGalleryItemBuilder().setURL(BANNER_URL)
     )
   );
+
+await feedbackChannel.send({
+  components: [container],
+  flags: MessageFlags.IsComponentsV2
+});
 
 await feedbackChannel.send({
   components: [container],
