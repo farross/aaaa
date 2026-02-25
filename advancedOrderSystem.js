@@ -43,9 +43,19 @@ function saveOrders() {
 // ======================= BUILD ORDER UI =======================
 function buildOrderContainer(id, data) {
 
-  const container = new ContainerBuilder()
+  const container = new ContainerBuilder();
+
+  // 👇 دي الصورة اللي المستخدم حطها في المودال
+  if (data.image && data.image.startsWith("http")) {
+    const cleanUrl = data.image.split("?")[0];
+    container.setThumbnail({ url: cleanUrl });
+  }
+
+  container
     .addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+      media.addItems(
+        new MediaGalleryItemBuilder().setURL(BANNER_URL)
+      )
     )
     .addSeparatorComponents(sep =>
       sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
@@ -59,19 +69,7 @@ function buildOrderContainer(id, data) {
 ${data.service}
 \`\`\``
       )
-    );
-
-  // 👇 هنا تحط التعديل بتاع thumbnail
-if (data.image) {
-  try {
-    const cleanUrl = data.image.split("?")[0];
-    container.setThumbnail({ url: cleanUrl });
-  } catch (err) {
-    console.log("Invalid image URL");
-  }
-}
-
-  container
+    )
     .addSeparatorComponents(sep =>
       sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
     )
