@@ -43,50 +43,41 @@ function saveOrders() {
 // ======================= BUILD ORDER UI =======================
 function buildOrderContainer(id, data) {
 
-  const container = new ContainerBuilder();
-
-  // 1. إضافة الصورة (thumbnail) أولاً لتظهر يمين النص
-  if (data.image && data.image.startsWith("http")) {
-    container.addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
-    );
-  }
-
-  // 2. إضافة بانر الشركة أسفل النص
-  container.addMediaGalleryComponents(media =>
-    media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
-  );
-
-  // 3. فاصل كبير بين مكونات الرسالة
-  container.addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-  );
-
-  // 4. محتوى النص الخاص بالطلب
-  container.addTextDisplayComponents(text =>
-    text.setContent(
+  const container = new ContainerBuilder()
+    .addMediaGalleryComponents(media =>
+      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+    )
+    .addSeparatorComponents(sep =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+    )
+    .addTextDisplayComponents(text =>
+      text.setContent(
 `## 📢 NEW ORDER <@&${GAMERS_ROLE_ID}>
 
 ### 📦 Order Details
 \`\`\`
 ${data.service}
 \`\`\``
+      )
+    );
+
+  if (data.image && data.image.startsWith("http")) {
+    container.addMediaGalleryComponents(media =>
+      media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
+    );
+  }
+
+  container
+    .addSeparatorComponents(sep =>
+      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
     )
-  );
-
-  // 5. فاصل صغير
-  container.addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-  );
-
-  // 6. تفاصيل إضافية في الأسفل
-  container.addTextDisplayComponents(text =>
-    text.setContent(
+    .addTextDisplayComponents(text =>
+      text.setContent(
 `🔹 **Price:** ${data.price}
 🔹 **Order ID:** #${id}
 🔹 **Seller:** <@${data.customer}>`
-    )
-  );
+      )
+    );
 
   return container;
 }
