@@ -82,9 +82,9 @@ ${data.service}
   // 6. تفاصيل إضافية في الأسفل
   container.addTextDisplayComponents(text =>
     text.setContent(
-`💰 **Price:** ${data.price}
-🆔 **Order ID:** #${id}
-👤 **Seller:** <@${data.customer}>`
+🔹 **Price:** ${data.price}
+🔹 **Order ID:** #${id}
+🔹 **Seller:** <@${data.customer}>`
     )
   );
 
