@@ -84,7 +84,6 @@ ${data.service}
 
   return container;
 }
-}
 
 // ======================================================
 // MODULE EXPORT
