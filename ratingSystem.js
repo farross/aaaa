@@ -115,22 +115,6 @@ module.exports = (client) => {
         "⭐".repeat(parseInt(stars)) +
         "☆".repeat(5 - parseInt(stars));
 
-      // ================= CONTAINER =================
-      const container = new ContainerBuilder()
-
-        // البانر
-        .addMediaGalleryComponents(media =>
-          media.addItems(
-            new MediaGalleryItemBuilder().setURL(BANNER_URL)
-          )
-        )
-
-        .addSeparatorComponents(sep =>
-          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-        )
-
-        // العنوان
-// ================= CONTAINER =================
 // ================= CONTAINER =================
 const container = new ContainerBuilder()
 
