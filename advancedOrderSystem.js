@@ -184,7 +184,6 @@ module.exports = (client) => {
 const orderMessage = await channel.send({
   embeds: [buildOrderEmbed(id, orderData.orders[id])],
   components: [buildBannerContainer(), row],
-  flags: MessageFlags.IsComponentsV2
 });
 
 orderData.orders[id].messageId = orderMessage.id;
@@ -248,7 +247,6 @@ saveOrders();
 await ticket.send({
   embeds: [buildOrderEmbed(id, data)],
   components: [buildBannerContainer(), ticketButtons],
-  flags: MessageFlags.IsComponentsV2
 });
 
       return interaction.editReply({ content: `✅ Ticket created: ${ticket}` });
@@ -319,7 +317,6 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_")) {
 await message.edit({
   embeds: [buildOrderEmbed(id, data)],
   components: [buildBannerContainer(), message.components[1]],
-  flags: MessageFlags.IsComponentsV2
 });
 
   } catch (err) {
