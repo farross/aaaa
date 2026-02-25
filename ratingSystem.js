@@ -149,7 +149,6 @@ module.exports = (client) => {
         );
 
       await feedbackChannel.send({
-        content: "‎",
         components: [container],
         flags: MessageFlags.IsComponentsV2
       });
