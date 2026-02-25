@@ -1,5 +1,5 @@
 // ======================================================
-// Feedback System - Container Version (V2)
+// Feedback System - Container Version (FINAL CLEAN)
 // ======================================================
 
 const {
@@ -22,14 +22,14 @@ const FEEDBACK_CHANNEL_ID = "1475373292708954286";
 const BANNER_URL = "https://i.postimg.cc/hPYYRkts/2.png";
 
 // ======================= STORAGE =======================
-let ratingData = { ratings: [] };
+let feedbackData = { feedbacks: [] };
 
 if (fs.existsSync('./ratings.json')) {
-  ratingData = JSON.parse(fs.readFileSync('./ratings.json'));
+  feedbackData = JSON.parse(fs.readFileSync('./ratings.json'));
 }
 
-function saveRatings() {
-  fs.writeFileSync('./ratings.json', JSON.stringify(ratingData, null, 2));
+function saveFeedback() {
+  fs.writeFileSync('./ratings.json', JSON.stringify(feedbackData, null, 2));
 }
 
 // ======================================================
@@ -37,17 +37,17 @@ function saveRatings() {
 // ======================================================
 module.exports = (client) => {
 
-  // ======================= RATE COMMAND =======================
+  // ======================= COMMAND =======================
   client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
     if (message.content === "!rate") {
       return message.channel.send({
-        content: "Click the button to FeedBack 👇",
+        content: "Click the button to Send Feedback 👇",
         components: [
           new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-              .setCustomId("open_rating")
+              .setCustomId("open_feedback")
               .setLabel("FeedBack")
               .setStyle(ButtonStyle.Primary)
           )
@@ -60,26 +60,19 @@ module.exports = (client) => {
   client.on(Events.InteractionCreate, async (interaction) => {
 
     // ================= OPEN MODAL =================
-    if (interaction.isButton() && interaction.customId === "open_rating") {
+    if (interaction.isButton() && interaction.customId === "open_feedback") {
 
       const modal = new ModalBuilder()
-        .setCustomId("rating_modal")
-        .setTitle("Rate Your Experience");
-
-      const starsInput = new TextInputBuilder()
-        .setCustomId("stars")
-        .setLabel("Rating (1-5)")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+        .setCustomId("feedback_modal")
+        .setTitle("Send Your Feedback");
 
       const feedbackInput = new TextInputBuilder()
         .setCustomId("feedback")
-        .setLabel("Your Feedback")
+        .setLabel("اكتب رأيك هنا")
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true);
 
       modal.addComponents(
-        new ActionRowBuilder().addComponents(starsInput),
         new ActionRowBuilder().addComponents(feedbackInput)
       );
 
@@ -87,85 +80,79 @@ module.exports = (client) => {
     }
 
     // ================= SUBMIT FEEDBACK =================
-    if (interaction.isModalSubmit() && interaction.customId === "rating_modal") {
+    if (interaction.isModalSubmit() && interaction.customId === "feedback_modal") {
 
-      const stars = interaction.fields.getTextInputValue("stars");
       const feedback = interaction.fields.getTextInputValue("feedback");
 
-      if (!["1","2","3","4","5"].includes(stars)) {
-        return interaction.reply({
-          content: "❌ Rating must be between 1 and 5.",
-          ephemeral: true
-        });
-      }
-
-      ratingData.ratings.push({
+      feedbackData.feedbacks.push({
         user: interaction.user.id,
-        stars: stars,
         feedback: feedback,
         date: new Date()
       });
 
-      saveRatings();
+      saveFeedback();
 
       const feedbackChannel = await interaction.guild.channels.fetch(FEEDBACK_CHANNEL_ID);
 
-      const starsVisual =
-        "⭐".repeat(parseInt(stars)) +
-        "☆".repeat(5 - parseInt(stars));
+      // ======= توقيت مصر =======
+      const now = new Date();
+
+      const egyptTime = new Intl.DateTimeFormat('ar-EG', {
+        timeZone: 'Africa/Cairo',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      }).format(now);
 
       // ================= CONTAINER =================
-// ================= CONTAINER =================
-const now = new Date();
-const formattedDate = now.toLocaleString("en-GB"); // تاريخ ووقت مرتب
+      const container = new ContainerBuilder()
 
-const container = new ContainerBuilder()
-
-  // العنوان
-  .addTextDisplayComponents(text =>
-    text.setContent(
+        // العنوان
+        .addTextDisplayComponents(text =>
+          text.setContent(
 `## 📨 New Feedback From | <@${interaction.user.id}>`
-    )
-  )
+          )
+        )
 
-  // مسافة
-  .addSeparatorComponents(sep =>
-    sep.setDivider(false)
-  )
+        .addSeparatorComponents(sep =>
+          sep.setDivider(false)
+        )
 
-  // الفيدباك في Quote
-  .addTextDisplayComponents(text =>
-    text.setContent(
+        // الفيدباك
+        .addTextDisplayComponents(text =>
+          text.setContent(
 `### 📝 محتوى التقييم
 
 >>> ${feedback}`
-    )
-  )
+          )
+        )
 
-  // مسافة كبيرة
-  .addSeparatorComponents(sep =>
-    sep.setDivider(false)
-  )
+        .addSeparatorComponents(sep =>
+          sep.setDivider(false)
+        )
 
-  // البانر تحت
-  .addMediaGalleryComponents(media =>
-    media.addItems(
-      new MediaGalleryItemBuilder().setURL(BANNER_URL)
-    )
-  )
+        // البانر تحت
+        .addMediaGalleryComponents(media =>
+          media.addItems(
+            new MediaGalleryItemBuilder().setURL(BANNER_URL)
+          )
+        )
 
-  // التاريخ تحت البانر
-  .addTextDisplayComponents(text =>
-    text.setContent(
-`🔹 شكرًا لتقييمك | ${egyptTimeArabic} بتوقيت القاهرة`
-    )
-  );
+        // التاريخ تحت البانر
+        .addTextDisplayComponents(text =>
+          text.setContent(
+`🔹 شكرًا لتقييمك | ${egyptTime} بتوقيت القاهرة`
+          )
+        );
 
-await feedbackChannel.send({
-  content: "‎",
-  components: [container],
-  flags: MessageFlags.IsComponentsV2
-});
+      await feedbackChannel.send({
+        content: "‎",
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
+      });
 
       return interaction.reply({
         content: "✅ Thank you for your feedback!",
