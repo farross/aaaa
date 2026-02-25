@@ -26,7 +26,7 @@ const CLOSED_CATEGORY_ID = "1474602945579450459";
 const ORDER_ROLE_ID = "1474602944602177730";
 const MANAGER_ROLE_ID = "1474602944602177730";
 
-const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475559359164715292/1.png?ex=699ded3d&is=699c9bbd&hm=211058c1ece58853229d43896b2908cdf66710b1142babc7228564cf5682e65c&";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475559359164715292/1.png";
 
 // ======================= STORAGE =======================
 let orderData = { count: 0, orders: {} };
@@ -173,7 +173,8 @@ module.exports = (client) => {
 
 // 1️⃣ البانر
 await channel.send({
-  components: [buildBannerContainer()]
+  components: [buildBannerContainer()],
+  flags: 1 << 9
 });
 
 // 2️⃣ الطلب Embed
@@ -241,10 +242,10 @@ saveOrders();
           .setStyle(ButtonStyle.Success)
       );
 
-await ticket.send({
-  components: [buildBannerContainer()]
+await channel.send({
+  components: [buildBannerContainer()],
+  flags: 1 << 9
 });
-
 await ticket.send({
   embeds: [buildOrderEmbed(id, data)],
   components: [ticketButtons]
