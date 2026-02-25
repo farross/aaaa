@@ -41,12 +41,16 @@ function saveOrders() {
 }
 
 // ======================= BUILD ORDER UI =======================
-function buildOrderContainer(id, data) {
-
-  const container = new ContainerBuilder()
-    .addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
-    )
+const container = new ContainerBuilder()
+  .setAccentColor(0xff0000) // اختياري لون
+  .setThumbnail({
+    url: data.image && data.image.startsWith("http")
+      ? data.image
+      : BANNER_URL
+  })
+  .addMediaGalleryComponents(media =>
+    media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+  )
     .addSeparatorComponents(sep =>
       sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
     )
