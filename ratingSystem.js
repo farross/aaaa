@@ -130,33 +130,47 @@ module.exports = (client) => {
         )
 
         // العنوان
-        .addTextDisplayComponents(text =>
-          text.setContent(
+// ================= CONTAINER =================
+const container = new ContainerBuilder()
+
+  // العنوان الرئيسي
+  .addTextDisplayComponents(text =>
+    text.setContent(
 `## ⭐ NEW FEEDBACK
 
 👤 **User:** <@${interaction.user.id}>
 🌟 **Rating:** ${starsVisual}`
-          )
-        )
+    )
+  )
 
-        .addSeparatorComponents(sep =>
-          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-        )
+  .addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Medium)
+  )
 
-        // الفيدباك
-        .addTextDisplayComponents(text =>
-          text.setContent(
-`📝 **Feedback**
-\`\`\`
-${feedback}
-\`\`\``
-          )
-        );
+  // الفيدباك بدون بوكس
+  .addTextDisplayComponents(text =>
+    text.setContent(
+`### 📝 Feedback
 
-      await feedbackChannel.send({
-        components: [container],
-        flags: MessageFlags.IsComponentsV2
-      });
+> ${feedback}`
+    )
+  )
+
+  .addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+  )
+
+  // البانر تحت خالص
+  .addMediaGalleryComponents(media =>
+    media.addItems(
+      new MediaGalleryItemBuilder().setURL(BANNER_URL)
+    )
+  );
+
+await feedbackChannel.send({
+  components: [container],
+  flags: MessageFlags.IsComponentsV2
+});
 
       return interaction.reply({
         content: "✅ Thank you for your feedback!",
