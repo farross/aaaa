@@ -110,57 +110,48 @@ module.exports = (client) => {
 
       const feedbackChannel = await interaction.guild.channels.fetch(FEEDBACK_CHANNEL_ID);
 
-      // تحويل الرقم لنجوم
       const starsVisual =
         "⭐".repeat(parseInt(stars)) +
         "☆".repeat(5 - parseInt(stars));
 
-// ================= CONTAINER =================
-const container = new ContainerBuilder()
+      // ================= CONTAINER =================
+      const container = new ContainerBuilder()
 
-  // العنوان الرئيسي
-  .addTextDisplayComponents(text =>
-    text.setContent(
+        .addTextDisplayComponents(text =>
+          text.setContent(
 `## ⭐ NEW FEEDBACK
 
 👤 **User:** <@${interaction.user.id}>
 🌟 **Rating:** ${starsVisual}`
-    )
-  )
+          )
+        )
 
-  .addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Medium)
-  )
+        .addSeparatorComponents(sep =>
+          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+        )
 
-  // الفيدباك بدون بوكس
-  .addTextDisplayComponents(text =>
-    text.setContent(
+        .addTextDisplayComponents(text =>
+          text.setContent(
 `### 📝 Feedback
 
 > ${feedback}`
-    )
-  )
+          )
+        )
 
-  .addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-  )
+        .addSeparatorComponents(sep =>
+          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+        )
 
-  // البانر تحت خالص
-  .addMediaGalleryComponents(media =>
-    media.addItems(
-      new MediaGalleryItemBuilder().setURL(BANNER_URL)
-    )
-  );
+        .addMediaGalleryComponents(media =>
+          media.addItems(
+            new MediaGalleryItemBuilder().setURL(BANNER_URL)
+          )
+        );
 
-await feedbackChannel.send({
-  components: [container],
-  flags: MessageFlags.IsComponentsV2
-});
-
-await feedbackChannel.send({
-  components: [container],
-  flags: MessageFlags.IsComponentsV2
-});
+      await feedbackChannel.send({
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
+      });
 
       return interaction.reply({
         content: "✅ Thank you for your feedback!",
