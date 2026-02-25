@@ -121,28 +121,30 @@ const formattedDate = now.toLocaleString("en-GB"); // تاريخ ووقت مرت
 
 const container = new ContainerBuilder()
 
-  // العنوان فوق
+  // العنوان
   .addTextDisplayComponents(text =>
     text.setContent(
 `## 📨 New Feedback From | <@${interaction.user.id}>`
     )
   )
 
+  // مسافة
   .addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+    sep.setDivider(false)
   )
 
-  // الفيدباك
+  // الفيدباك في Quote
   .addTextDisplayComponents(text =>
     text.setContent(
-`### 📝 Feedback
+`### 📝 محتوى التقييم
 
-> ${feedback}`
+>>> ${feedback}`
     )
   )
 
+  // مسافة كبيرة
   .addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+    sep.setDivider(false)
   )
 
   // البانر تحت
@@ -152,18 +154,15 @@ const container = new ContainerBuilder()
     )
   )
 
-  .addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-  )
-
-  // السطر السفلي
+  // التاريخ تحت البانر
   .addTextDisplayComponents(text =>
     text.setContent(
-`🔹 Thanks for Your Feedback | ${formattedDate}`
+`🔹 شكرًا لتقييمك | ${egyptTimeArabic} بتوقيت القاهرة`
     )
   );
 
 await feedbackChannel.send({
+  content: "‎",
   components: [container],
   flags: MessageFlags.IsComponentsV2
 });
