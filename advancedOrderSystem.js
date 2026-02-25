@@ -12,7 +12,8 @@ const {
   Events,
   ContainerBuilder,
   MediaGalleryItemBuilder,
-  EmbedBuilder
+  EmbedBuilder,
+  MessageFlags
 } = require('discord.js');
 
 const fs = require('fs');
@@ -173,8 +174,9 @@ module.exports = (client) => {
 
 // 1️⃣ البانر
 await channel.send({
+  content: "‎",
   components: [buildBannerContainer()],
-  flags: 1 << 9
+  flags: MessageFlags.IsComponentsV2
 });
 
 // 2️⃣ الطلب Embed
@@ -244,11 +246,12 @@ saveOrders();
 
 await channel.send({
   components: [buildBannerContainer()],
-  flags: 1 << 9
+  flags: MessageFlags.IsComponentsV2
 });
 await ticket.send({
-  embeds: [buildOrderEmbed(id, data)],
-  components: [ticketButtons]
+  content: "‎",
+  components: [buildBannerContainer()],
+  flags: MessageFlags.IsComponentsV2
 });
 
       return interaction.editReply({ content: `✅ Ticket created: ${ticket}` });
