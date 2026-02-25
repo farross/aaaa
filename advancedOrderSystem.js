@@ -1,5 +1,5 @@
 // ======================================================
-// Advanced Order System - Clean Final Version
+// Advanced Order System - Stable Embed Version
 // ======================================================
 
 const {
@@ -10,9 +10,6 @@ const {
   TextInputBuilder,
   TextInputStyle,
   Events,
-  ContainerBuilder,
-  MediaGalleryItemBuilder,
-  MessageFlags,
   EmbedBuilder
 } = require('discord.js');
 
@@ -40,15 +37,7 @@ function saveOrders() {
   fs.writeFileSync('./orders.json', JSON.stringify(orderData, null, 2));
 }
 
-// ======================= BUILD ORDER UI =======================
-function saveOrders() {
-  fs.writeFileSync('./orders.json', JSON.stringify(orderData, null, 2));
-}
-
-
-// ======================= BUILD ORDER UI =======================
-
-// 🔹 Embed للنص + الصورة يمين
+// ======================= EMBED BUILDER =======================
 function buildOrderEmbed(id, data) {
 
   const embed = new EmbedBuilder()
@@ -64,33 +53,22 @@ ${data.service}
 💰 **Price:** ${data.price}
 🆔 **Order ID:** #${id}
 👤 **Seller:** <@${data.customer}>`
-    );
+    )
+    .setImage(BANNER_URL); // البانر تحت
 
   if (data.image) {
-    embed.setThumbnail(data.image.split("?")[0]);
+    embed.setThumbnail(data.image.split("?")[0]); // الصورة يمين
   }
 
   return embed;
 }
 
-
-// 🔹 Container للبانر بس
-function buildBannerContainer() {
-
-  return new ContainerBuilder()
-    .setAccentColor(0x2b2d31)
-    .addMediaGalleryComponents(media =>
-      media.addItems(
-        new MediaGalleryItemBuilder().setURL(BANNER_URL)
-      )
-    );
-}
 // ======================================================
 // MODULE EXPORT
 // ======================================================
 module.exports = (client) => {
 
-  // ======================= SETUP BUTTON =======================
+  // ================= SETUP BUTTON =================
   client.on(Events.MessageCreate, async (message) => {
 
     if (message.author.bot) return;
@@ -112,10 +90,10 @@ module.exports = (client) => {
     });
   });
 
-  // ======================= INTERACTIONS =======================
+  // ================= INTERACTIONS =================
   client.on(Events.InteractionCreate, async (interaction) => {
 
-    // ================= OPEN ORDER MODAL =================
+    // ================= OPEN MODAL =================
     if (interaction.isButton() && interaction.customId === "start_order") {
 
       const modal = new ModalBuilder()
@@ -149,7 +127,6 @@ module.exports = (client) => {
     }
 
     // ================= CREATE ORDER =================
-    await interaction.deferReply({ ephemeral: true });
     if (interaction.isModalSubmit() && interaction.customId === "order_modal") {
 
       orderData.count++;
@@ -182,13 +159,13 @@ module.exports = (client) => {
           .setStyle(ButtonStyle.Secondary)
       );
 
-const orderMessage = await channel.send({
-  embeds: [buildOrderEmbed(id, orderData.orders[id])],
-  components: [buildBannerContainer(), row],
-});
+      const orderMessage = await channel.send({
+        embeds: [buildOrderEmbed(id, orderData.orders[id])],
+        components: [row]
+      });
 
-orderData.orders[id].messageId = orderMessage.id;
-saveOrders();
+      orderData.orders[id].messageId = orderMessage.id;
+      saveOrders();
 
       return interaction.reply({ content: "✅ Order Sent!", ephemeral: true });
     }
@@ -196,32 +173,12 @@ saveOrders();
     // ================= ACCEPT =================
     if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
 
-      await interaction.deferReply({ ephemeral: true });
-
       const id = interaction.customId.split("_")[1];
       const data = orderData.orders[id];
-      if (!data) return interaction.editReply({ content: "❌ Order not found." });
-      if (data.status === "accepted")
-        return interaction.editReply({ content: "❌ Already accepted." });
+      if (!data) return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
 
       data.status = "accepted";
       saveOrders();
-
-      const disabledRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`accept_${id}`)
-          .setLabel("Accepted ✅")
-          .setStyle(ButtonStyle.Success)
-          .setDisabled(true),
-        new ButtonBuilder()
-          .setCustomId(`manage_${id}`)
-          .setLabel("Manage")
-          .setStyle(ButtonStyle.Secondary)
-      );
-
-      await interaction.message.edit({
-        components: [interaction.message.components[0], disabledRow]
-      });
 
       const ticket = await interaction.guild.channels.create({
         name: `order-${id}`,
@@ -234,113 +191,24 @@ saveOrders();
         ]
       });
 
-      const ticketButtons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`close_${id}`)
-          .setLabel("🔒 Close")
-          .setStyle(ButtonStyle.Danger),
-        new ButtonBuilder()
-          .setCustomId("open_rating")
-          .setLabel("⭐ Feedback")
-          .setStyle(ButtonStyle.Success)
-      );
+      await ticket.send({
+        embeds: [buildOrderEmbed(id, data)]
+      });
 
-await ticket.send({
-  embeds: [buildOrderEmbed(id, data)],
-  components: [buildBannerContainer(), ticketButtons],
-});
-
-      return interaction.editReply({ content: `✅ Ticket created: ${ticket}` });
+      return interaction.reply({
+        content: `✅ Ticket created: ${ticket}`,
+        ephemeral: true
+      });
     }
-
-    // ================= MANAGE =================
-    if (interaction.isButton() && interaction.customId.startsWith("manage_")) {
-
-      const id = interaction.customId.split("_")[1];
-      const data = orderData.orders[id];
-      if (!data)
-        return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
-
-      if (!interaction.member.roles.cache.has(MANAGER_ROLE_ID))
-        return interaction.reply({ content: "❌ No permission.", ephemeral: true });
-
-      const modal = new ModalBuilder()
-        .setCustomId(`edit_${id}`)
-        .setTitle("Edit Order");
-
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId("service")
-            .setLabel("Service")
-            .setStyle(TextInputStyle.Paragraph)
-            .setValue(data.service)
-        ),
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId("price")
-            .setLabel("Price")
-            .setStyle(TextInputStyle.Short)
-            .setValue(data.price)
-        ),
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId("image")
-            .setLabel("Image URL")
-            .setStyle(TextInputStyle.Short)
-            .setValue(data.image || "")
-        )
-      );
-
-      return interaction.showModal(modal);
-    }
-
-// ================= UPDATE ORDER =================
-if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_")) {
-
-  const id = interaction.customId.split("_")[1];
-  const data = orderData.orders[id];
-
-  if (!data)
-    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
-
-  // تحديث البيانات
-  data.service = interaction.fields.getTextInputValue("service");
-  data.price = interaction.fields.getTextInputValue("price");
-  data.image = interaction.fields.getTextInputValue("image") || null;
-
-  saveOrders();
-
-  try {
-    const channel = await interaction.guild.channels.fetch(ORDER_CHANNEL_ID);
-    const message = await channel.messages.fetch(data.messageId);
-
-await message.edit({
-  embeds: [buildOrderEmbed(id, data)],
-  components: [buildBannerContainer(), message.components[1]],
-});
-
-  } catch (err) {
-    console.log("Failed to update order message:", err);
-  }
-
-  return interaction.reply({
-    content: "✅ Order updated successfully.",
-    ephemeral: true
-  });
-}
 
     // ================= CLOSE =================
     if (interaction.isButton() && interaction.customId.startsWith("close_")) {
 
-      await interaction.deferReply({ ephemeral: true });
-
-      const id = interaction.customId.split("_")[1];
-
       await interaction.channel.setParent(CLOSED_CATEGORY_ID);
 
-      return interaction.editReply({
-        content: "🔒 Ticket moved to Closed."
+      return interaction.reply({
+        content: "🔒 Ticket moved to Closed.",
+        ephemeral: true
       });
     }
 
