@@ -149,6 +149,7 @@ module.exports = (client) => {
     }
 
     // ================= CREATE ORDER =================
+    await interaction.deferReply({ ephemeral: true });
     if (interaction.isModalSubmit() && interaction.customId === "order_modal") {
 
       orderData.count++;
