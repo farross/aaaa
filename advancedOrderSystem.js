@@ -42,47 +42,50 @@ function saveOrders() {
 
 // ======================= BUILD ORDER UI =======================
 function buildOrderContainer(id, data) {
+
   const container = new ContainerBuilder();
 
-  // 1. العنوان مع الشكر والإشارة للعميل (مكتوب بأسلوب واضح)
-  container.addTextDisplayComponents(text =>
-    text.setContent(
-      `**📢 New Order From | <@${data.customer}>**`
-    )
-  );
-
-  // 2. Feedback message or خدمة الطلب
-  container.addTextDisplayComponents(text =>
-    text.setContent(
-      `💬 **Order Details:**\n\`${data.service}\``
-    )
-  );
-
-  // 3. صورة مصغرة على اليمين
+  // 1. إضافة الصورة (thumbnail) أولاً لتظهر يمين النص
   if (data.image && data.image.startsWith("http")) {
-    container.addMediaGalleryComponents(media => 
+    container.addMediaGalleryComponents(media =>
       media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
     );
   }
 
-  // 4. separator صغير بين المقاطع
+  // 2. إضافة بانر الشركة أسفل النص
+  container.addMediaGalleryComponents(media =>
+    media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+  );
+
+  // 3. فاصل كبير بين مكونات الرسالة
+  container.addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+  );
+
+  // 4. محتوى النص الخاص بالطلب
+  container.addTextDisplayComponents(text =>
+    text.setContent(
+`## 📢 NEW ORDER <@&${GAMERS_ROLE_ID}>
+
+### 📦 Order Details
+\`\`\`
+${data.service}
+\`\`\``
+    )
+  );
+
+  // 5. فاصل صغير
   container.addSeparatorComponents(sep =>
     sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
   );
 
-  // 5. معلومات إضافية (السعر، رقم الطلب، الصانع)
+  // 6. تفاصيل إضافية في الأسفل
   container.addTextDisplayComponents(text =>
     text.setContent(
-      `💰 **Price:** ${data.price}\n🆔 **Order ID:** #${id}\n👤 **Seller:** <@${data.customer}>`
+`💰 **Price:** ${data.price}
+🆔 **Order ID:** #${id}
+👤 **Seller:** <@${data.customer}>`
     )
-  );
-
-  // 6. بانر الشركة أو صورة مميزة أسفل الرسالة
-  container.addSeparatorComponents(sep =>
-    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Medium)
-  );
-  container.addMediaGalleryComponents(media =>
-    media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
   );
 
   return container;
