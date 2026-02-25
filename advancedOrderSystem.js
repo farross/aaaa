@@ -11,9 +11,8 @@ const {
   TextInputStyle,
   Events,
   ContainerBuilder,
-  SeparatorSpacingSize,
   MediaGalleryItemBuilder,
-  MessageFlags
+  MessageFlags,
   EmbedBuilder
 } = require('discord.js');
 
