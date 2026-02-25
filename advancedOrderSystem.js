@@ -27,7 +27,7 @@ const CLOSED_CATEGORY_ID = "1474602945579450459";
 const ORDER_ROLE_ID = "1474602944602177730";
 const MANAGER_ROLE_ID = "1474602944602177730";
 
-const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475559359164715292/1.png?ex=699ded3d&is=699c9bbd&hm=211058c1ece58853229d43896b2908cdf66710b1142babc7228564cf5682e65c&";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475559359164715292/1.png";
 
 // ======================= STORAGE =======================
 let orderData = { count: 0, orders: {} };
@@ -43,20 +43,25 @@ function saveOrders() {
 // ======================= BUILD ORDER UI =======================
 function buildOrderContainer(id, data) {
 
-  const container = new ContainerBuilder();
+  const container = new ContainerBuilder()
+    .setAccentColor(0x2b2d31);
 
-  // 👇 دي الصورة اللي المستخدم حطها في المودال
-  if (data.image && data.image.startsWith("http")) {
-    const cleanUrl = data.image.split("?")[0];
-    container.setThumbnail({ url: cleanUrl });
+  // Thumbnail الأول
+  if (data.image) {
+    try {
+      const cleanUrl = data.image.split("?")[0];
+      container.setThumbnail({ url: cleanUrl });
+    } catch {}
   }
 
-  container
-    .addMediaGalleryComponents(media =>
-      media.addItems(
-        new MediaGalleryItemBuilder().setURL(BANNER_URL)
-      )
+  // البانر بعده
+  container.addMediaGalleryComponents(media =>
+    media.addItems(
+      new MediaGalleryItemBuilder().setURL(BANNER_URL)
     )
+  );
+
+  container
     .addSeparatorComponents(sep =>
       sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
     )
@@ -83,7 +88,6 @@ ${data.service}
 
   return container;
 }
-
 // ======================================================
 // MODULE EXPORT
 // ======================================================
