@@ -43,12 +43,12 @@ module.exports = (client) => {
 
     if (message.content === "!rate") {
       return message.channel.send({
-        content: "Click the button to rate 👇",
+        content: "Click the button to FeedBack 👇",
         components: [
           new ActionRowBuilder().addComponents(
             new ButtonBuilder()
               .setCustomId("open_rating")
-              .setLabel("⭐ Rate Now")
+              .setLabel("FeedBack")
               .setStyle(ButtonStyle.Primary)
           )
         ]
@@ -121,8 +121,8 @@ module.exports = (client) => {
           text.setContent(
 `## ⭐ NEW FEEDBACK
 
-👤 **User:** <@${interaction.user.id}>
-🌟 **Rating:** ${starsVisual}`
+🔹 **User:** <@${interaction.user.id}>
+🔹 **Rating:** ${starsVisual}`
           )
         )
 
