@@ -66,9 +66,16 @@ ${data.service}
     );
 
   // 👇 الصورة الصغيرة فوق يمين
-  if (data.image && data.image.startsWith("http")) {
-    container.setThumbnail({ url: data.image });
-  }
+if (
+  data.image &&
+  data.image.startsWith("http") &&
+  (data.image.endsWith(".png") ||
+   data.image.endsWith(".jpg") ||
+   data.image.endsWith(".jpeg") ||
+   data.image.endsWith(".webp"))
+) {
+  container.setThumbnail({ url: data.image });
+}
 
   container
     .addSeparatorComponents(sep =>
