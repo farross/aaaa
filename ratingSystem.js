@@ -115,43 +115,58 @@ module.exports = (client) => {
         "☆".repeat(5 - parseInt(stars));
 
       // ================= CONTAINER =================
-      const container = new ContainerBuilder()
+// ================= CONTAINER =================
+const now = new Date();
+const formattedDate = now.toLocaleString("en-GB"); // تاريخ ووقت مرتب
 
-        .addTextDisplayComponents(text =>
-          text.setContent(
-`## ⭐ NEW FEEDBACK
+const container = new ContainerBuilder()
 
-🔹 **User:** <@${interaction.user.id}>
-🔹 **Rating:** ${starsVisual}`
-          )
-        )
+  // العنوان فوق
+  .addTextDisplayComponents(text =>
+    text.setContent(
+`## 📨 New Feedback From | <@${interaction.user.id}>`
+    )
+  )
 
-        .addSeparatorComponents(sep =>
-          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-        )
+  .addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+  )
 
-        .addTextDisplayComponents(text =>
-          text.setContent(
+  // الفيدباك
+  .addTextDisplayComponents(text =>
+    text.setContent(
 `### 📝 Feedback
 
 > ${feedback}`
-          )
-        )
+    )
+  )
 
-        .addSeparatorComponents(sep =>
-          sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-        )
+  .addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
+  )
 
-        .addMediaGalleryComponents(media =>
-          media.addItems(
-            new MediaGalleryItemBuilder().setURL(BANNER_URL)
-          )
-        );
+  // البانر تحت
+  .addMediaGalleryComponents(media =>
+    media.addItems(
+      new MediaGalleryItemBuilder().setURL(BANNER_URL)
+    )
+  )
 
-      await feedbackChannel.send({
-        components: [container],
-        flags: MessageFlags.IsComponentsV2
-      });
+  .addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+  )
+
+  // السطر السفلي
+  .addTextDisplayComponents(text =>
+    text.setContent(
+`🔹 Thanks for Your Feedback | ${formattedDate}`
+    )
+  );
+
+await feedbackChannel.send({
+  components: [container],
+  flags: MessageFlags.IsComponentsV2
+});
 
       return interaction.reply({
         content: "✅ Thank you for your feedback!",
