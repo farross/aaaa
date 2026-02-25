@@ -26,7 +26,7 @@ const CLOSED_CATEGORY_ID = "1474602945579450459";
 const ORDER_ROLE_ID = "1474602944602177730";
 const MANAGER_ROLE_ID = "1474602944602177730";
 
-const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475559359164715292/1.png";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475559359164715292/1.png?ex=699ded3d&is=699c9bbd&hm=211058c1ece58853229d43896b2908cdf66710b1142babc7228564cf5682e65c&";
 
 // ======================= STORAGE =======================
 let orderData = { count: 0, orders: {} };
@@ -40,7 +40,6 @@ function saveOrders() {
 }
 
 // ======================= BUILD ORDER UI =======================
-
 // 🔹 Embed (النص + الصورة يمين)
 function buildOrderEmbed(id, data) {
 
@@ -66,12 +65,12 @@ ${data.service}
   return embed;
 }
 
-// 🔹 Container (البانر فقط)
+// 🔹 Container (للبانر فقط)
 function buildBannerContainer() {
   return new ContainerBuilder()
     .addMediaGalleryComponents(media =>
       media.addItems(
-        new MediaGalleryItemBuilder().setURL(BANNER_URL)
+        new MediaGalleryItemBuilder().setURL(BANNER_URL.split("?")[0])
       )
     );
 }
@@ -172,19 +171,19 @@ module.exports = (client) => {
           .setStyle(ButtonStyle.Secondary)
       );
 
-      // بانر
-      await channel.send({
-        components: [buildBannerContainer()]
-      });
+// 1️⃣ البانر
+await channel.send({
+  components: [buildBannerContainer()]
+});
 
-      // الطلب
-      const orderMessage = await channel.send({
-        embeds: [buildOrderEmbed(id, orderData.orders[id])],
-        components: [row]
-      });
+// 2️⃣ الطلب Embed
+const orderMessage = await channel.send({
+  embeds: [buildOrderEmbed(id, orderData.orders[id])],
+  components: [row]
+});
 
-      orderData.orders[id].messageId = orderMessage.id;
-      saveOrders();
+orderData.orders[id].messageId = orderMessage.id;
+saveOrders();
 
       return interaction.reply({ content: "✅ Order Sent!", ephemeral: true });
     }
@@ -196,9 +195,9 @@ module.exports = (client) => {
 
       const id = interaction.customId.split("_")[1];
       const data = orderData.orders[id];
-
-      if (!data)
-        return interaction.editReply({ content: "❌ Order not found." });
+      if (!data) return interaction.editReply({ content: "❌ Order not found." });
+      if (data.status === "accepted")
+        return interaction.editReply({ content: "❌ Already accepted." });
 
       data.status = "accepted";
       saveOrders();
@@ -216,9 +215,9 @@ module.exports = (client) => {
       );
 
       await interaction.message.edit({
-        embeds: [buildOrderEmbed(id, data)],
-        components: [disabledRow]
-      });
+  embeds: [buildOrderEmbed(id, data)],
+  components: [disabledRow]
+});
 
       const ticket = await interaction.guild.channels.create({
         name: `order-${id}`,
@@ -242,16 +241,107 @@ module.exports = (client) => {
           .setStyle(ButtonStyle.Success)
       );
 
-      await ticket.send({
-        components: [buildBannerContainer()]
-      });
+await ticket.send({
+  components: [buildBannerContainer()]
+});
 
-      await ticket.send({
-        embeds: [buildOrderEmbed(id, data)],
-        components: [ticketButtons]
-      });
+await ticket.send({
+  embeds: [buildOrderEmbed(id, data)],
+  components: [ticketButtons]
+});
 
       return interaction.editReply({ content: `✅ Ticket created: ${ticket}` });
+    }
+
+    // ================= MANAGE =================
+    if (interaction.isButton() && interaction.customId.startsWith("manage_")) {
+
+      const id = interaction.customId.split("_")[1];
+      const data = orderData.orders[id];
+      if (!data)
+        return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
+
+      if (!interaction.member.roles.cache.has(MANAGER_ROLE_ID))
+        return interaction.reply({ content: "❌ No permission.", ephemeral: true });
+
+      const modal = new ModalBuilder()
+        .setCustomId(`edit_${id}`)
+        .setTitle("Edit Order");
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("service")
+            .setLabel("Service")
+            .setStyle(TextInputStyle.Paragraph)
+            .setValue(data.service)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("price")
+            .setLabel("Price")
+            .setStyle(TextInputStyle.Short)
+            .setValue(data.price)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("image")
+            .setLabel("Image URL")
+            .setStyle(TextInputStyle.Short)
+            .setValue(data.image || "")
+        )
+      );
+
+      return interaction.showModal(modal);
+    }
+
+// ================= UPDATE ORDER =================
+if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_")) {
+
+  const id = interaction.customId.split("_")[1];
+  const data = orderData.orders[id];
+
+  if (!data)
+    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
+
+  // تحديث البيانات
+  data.service = interaction.fields.getTextInputValue("service");
+  data.price = interaction.fields.getTextInputValue("price");
+  data.image = interaction.fields.getTextInputValue("image") || null;
+
+  saveOrders();
+
+  try {
+    const channel = await interaction.guild.channels.fetch(ORDER_CHANNEL_ID);
+    const message = await channel.messages.fetch(data.messageId);
+
+await message.edit({
+  embeds: [buildOrderEmbed(id, data)],
+  components: [message.components[0]]
+});
+
+  } catch (err) {
+    console.log("Failed to update order message:", err);
+  }
+
+  return interaction.reply({
+    content: "✅ Order updated successfully.",
+    ephemeral: true
+  });
+}
+
+    // ================= CLOSE =================
+    if (interaction.isButton() && interaction.customId.startsWith("close_")) {
+
+      await interaction.deferReply({ ephemeral: true });
+
+      const id = interaction.customId.split("_")[1];
+
+      await interaction.channel.setParent(CLOSED_CATEGORY_ID);
+
+      return interaction.editReply({
+        content: "🔒 Ticket moved to Closed."
+      });
     }
 
   });
