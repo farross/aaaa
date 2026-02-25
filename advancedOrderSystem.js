@@ -1,5 +1,5 @@
 // ======================================================
-// Advanced Order System - Gold Style Version
+// Advanced Order System - Clean Final Version
 // ======================================================
 
 const {
@@ -10,27 +10,26 @@ const {
   TextInputBuilder,
   TextInputStyle,
   Events,
-  EmbedBuilder,
-  ChannelType,
-  PermissionFlagsBits
+  ContainerBuilder,
+  SeparatorSpacingSize,
+  MediaGalleryItemBuilder,
+  MessageFlags
 } = require('discord.js');
 
 const fs = require('fs');
 
 // ======================= CONFIG =======================
-
 const ORDER_CHANNEL_ID = "1474602944983990290";
 const GAMERS_ROLE_ID = "1474625885062697161";
+const COMMUNITY_ROLE_ID = "1474625885062697161";
 const TICKET_CATEGORY_ID = "1474602945579450458";
 const CLOSED_CATEGORY_ID = "1474602945579450459";
 const ORDER_ROLE_ID = "1474602944602177730";
 const MANAGER_ROLE_ID = "1474602944602177730";
 
-const LOGO_URL = "https://cdn.discordapp.com/attachments/1474602944983990290/1476049474051899462/Vita-Spray-Blueprint.png";
-const BANNER_URL = "https://cdn.discordapp.com/attachments/1474602944983990290/1476075693208240230/New_Boostfiy_order_announcement.png";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475559359164715292/1.png?ex=699ded3d&is=699c9bbd&hm=211058c1ece58853229d43896b2908cdf66710b1142babc7228564cf5682e65c&";
 
 // ======================= STORAGE =======================
-
 let orderData = { count: 0, orders: {} };
 
 if (fs.existsSync('./orders.json')) {
@@ -41,53 +40,67 @@ function saveOrders() {
   fs.writeFileSync('./orders.json', JSON.stringify(orderData, null, 2));
 }
 
-// ======================= EMBED BUILDER =======================
+// ======================= BUILD ORDER UI =======================
+function buildOrderContainer(id, data) {
+  const container = new ContainerBuilder();
 
-function buildOrderEmbed(id, data) {
-  return new EmbedBuilder()
-    .setColor(0xF1C40F)
-    .setTitle(`📦 New Order | <@${data.customer}>`)
-    .addFields(
-      {
-        name: "📦 Order Details",
-        value: `\`\`\`\n${data.service}\n\`\`\``
-      },
-      {
-        name: "🆔 Order ID",
-        value: `#${id}`,
-        inline: true
-      },
-      {
-        name: "💰 Price",
-        value: data.price,
-        inline: true
-      },
-      {
-        name: "👤 Assigned Seller",
-        value: data.assigned ? `<@${data.assigned}>` : "Not Assigned",
-        inline: false
-      }
+  // 1. العنوان مع الشكر والإشارة للعميل (مكتوب بأسلوب واضح)
+  container.addTextDisplayComponents(text =>
+    text.setContent(
+      `**📢 New Order From | <@${data.customer}>**`
     )
-    .setThumbnail(LOGO_URL)
-    .setImage(BANNER_URL)
-    .setFooter({ text: "Boostfiy Order System" })
-    .setTimestamp();
+  );
+
+  // 2. Feedback message or خدمة الطلب
+  container.addTextDisplayComponents(text =>
+    text.setContent(
+      `💬 **Order Details:**\n\`${data.service}\``
+    )
+  );
+
+  // 3. صورة مصغرة على اليمين
+  if (data.image && data.image.startsWith("http")) {
+    container.addMediaGalleryComponents(media => 
+      media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
+    );
+  }
+
+  // 4. separator صغير بين المقاطع
+  container.addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+  );
+
+  // 5. معلومات إضافية (السعر، رقم الطلب، الصانع)
+  container.addTextDisplayComponents(text =>
+    text.setContent(
+      `💰 **Price:** ${data.price}\n🆔 **Order ID:** #${id}\n👤 **Seller:** <@${data.customer}>`
+    )
+  );
+
+  // 6. بانر الشركة أو صورة مميزة أسفل الرسالة
+  container.addSeparatorComponents(sep =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Medium)
+  );
+  container.addMediaGalleryComponents(media =>
+    media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
+  );
+
+  return container;
 }
 
 // ======================================================
 // MODULE EXPORT
 // ======================================================
-
 module.exports = (client) => {
 
-  // ================= SETUP BUTTON =================
-
+  // ======================= SETUP BUTTON =======================
   client.on(Events.MessageCreate, async (message) => {
+
     if (message.author.bot) return;
     if (message.content !== "!setup-order") return;
 
     if (!message.member.roles.cache.has(ORDER_ROLE_ID))
-      return message.reply("❌ ليس لديك صلاحية.");
+      return message.reply("❌ ليس لديك صلاحية لاستخدام هذا الأمر.");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -102,12 +115,10 @@ module.exports = (client) => {
     });
   });
 
-  // ================= INTERACTIONS =================
-
+  // ======================= INTERACTIONS =======================
   client.on(Events.InteractionCreate, async (interaction) => {
 
-    // ===== OPEN MODAL =====
-
+    // ================= OPEN ORDER MODAL =================
     if (interaction.isButton() && interaction.customId === "start_order") {
 
       const modal = new ModalBuilder()
@@ -128,14 +139,19 @@ module.exports = (client) => {
             .setLabel("السعر")
             .setStyle(TextInputStyle.Short)
             .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("image")
+            .setLabel("رابط صورة (اختياري)")
+            .setStyle(TextInputStyle.Short)
         )
       );
 
       return interaction.showModal(modal);
     }
 
-    // ===== CREATE ORDER =====
-
+    // ================= CREATE ORDER =================
     if (interaction.isModalSubmit() && interaction.customId === "order_modal") {
 
       orderData.count++;
@@ -143,13 +159,14 @@ module.exports = (client) => {
 
       const service = interaction.fields.getTextInputValue("service");
       const price = interaction.fields.getTextInputValue("price");
+      const image = interaction.fields.getTextInputValue("image") || null;
 
       orderData.orders[id] = {
         service,
         price,
+        image,
         status: "pending",
-        customer: interaction.user.id,
-        assigned: null
+        customer: interaction.user.id
       };
 
       saveOrders();
@@ -167,32 +184,29 @@ module.exports = (client) => {
           .setStyle(ButtonStyle.Secondary)
       );
 
-      const msg = await channel.send({
-        embeds: [buildOrderEmbed(id, orderData.orders[id])],
-        components: [row]
-      });
+const orderMessage = await channel.send({
+  components: [buildOrderContainer(id, orderData.orders[id]), row],
+  flags: MessageFlags.IsComponentsV2
+});
 
-      orderData.orders[id].messageId = msg.id;
-      saveOrders();
+orderData.orders[id].messageId = orderMessage.id;
+saveOrders();
 
       return interaction.reply({ content: "✅ Order Sent!", ephemeral: true });
     }
 
-    // ===== ACCEPT =====
-
+    // ================= ACCEPT =================
     if (interaction.isButton() && interaction.customId.startsWith("accept_")) {
+
+      await interaction.deferReply({ ephemeral: true });
 
       const id = interaction.customId.split("_")[1];
       const data = orderData.orders[id];
-
-      if (!data)
-        return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
-
+      if (!data) return interaction.editReply({ content: "❌ Order not found." });
       if (data.status === "accepted")
-        return interaction.reply({ content: "❌ Already accepted.", ephemeral: true });
+        return interaction.editReply({ content: "❌ Already accepted." });
 
       data.status = "accepted";
-      data.assigned = interaction.user.id;
       saveOrders();
 
       const disabledRow = new ActionRowBuilder().addComponents(
@@ -208,57 +222,130 @@ module.exports = (client) => {
       );
 
       await interaction.message.edit({
-        embeds: [buildOrderEmbed(id, data)],
-        components: [disabledRow]
+        components: [interaction.message.components[0], disabledRow]
       });
 
       const ticket = await interaction.guild.channels.create({
         name: `order-${id}`,
-        type: ChannelType.GuildText,
+        type: 0,
         parent: TICKET_CATEGORY_ID,
         permissionOverwrites: [
-          {
-            id: interaction.guild.roles.everyone,
-            deny: [PermissionFlagsBits.ViewChannel]
-          },
-          {
-            id: data.customer,
-            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-          },
-          {
-            id: data.assigned,
-            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-          }
+          { id: interaction.guild.roles.everyone, deny: ['ViewChannel'] },
+          { id: data.customer, allow: ['ViewChannel', 'SendMessages'] },
+          { id: COMMUNITY_ROLE_ID, allow: ['ViewChannel', 'SendMessages'] }
         ]
       });
 
-      const closeRow = new ActionRowBuilder().addComponents(
+      const ticketButtons = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`close_${id}`)
-          .setLabel("🔒 Close Ticket")
-          .setStyle(ButtonStyle.Danger)
+          .setLabel("🔒 Close")
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId("open_rating")
+          .setLabel("⭐ Feedback")
+          .setStyle(ButtonStyle.Success)
       );
 
       await ticket.send({
-        embeds: [buildOrderEmbed(id, data)],
-        components: [closeRow]
+        components: [buildOrderContainer(id, data), ticketButtons],
+        flags: MessageFlags.IsComponentsV2
       });
 
-      return interaction.reply({
-        content: `✅ Ticket created: ${ticket}`,
-        ephemeral: true
-      });
+      return interaction.editReply({ content: `✅ Ticket created: ${ticket}` });
     }
 
-    // ===== CLOSE =====
+    // ================= MANAGE =================
+    if (interaction.isButton() && interaction.customId.startsWith("manage_")) {
 
+      const id = interaction.customId.split("_")[1];
+      const data = orderData.orders[id];
+      if (!data)
+        return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
+
+      if (!interaction.member.roles.cache.has(MANAGER_ROLE_ID))
+        return interaction.reply({ content: "❌ No permission.", ephemeral: true });
+
+      const modal = new ModalBuilder()
+        .setCustomId(`edit_${id}`)
+        .setTitle("Edit Order");
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("service")
+            .setLabel("Service")
+            .setStyle(TextInputStyle.Paragraph)
+            .setValue(data.service)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("price")
+            .setLabel("Price")
+            .setStyle(TextInputStyle.Short)
+            .setValue(data.price)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("image")
+            .setLabel("Image URL")
+            .setStyle(TextInputStyle.Short)
+            .setValue(data.image || "")
+        )
+      );
+
+      return interaction.showModal(modal);
+    }
+
+// ================= UPDATE ORDER =================
+if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_")) {
+
+  const id = interaction.customId.split("_")[1];
+  const data = orderData.orders[id];
+
+  if (!data)
+    return interaction.reply({ content: "❌ Order not found.", ephemeral: true });
+
+  // تحديث البيانات
+  data.service = interaction.fields.getTextInputValue("service");
+  data.price = interaction.fields.getTextInputValue("price");
+  data.image = interaction.fields.getTextInputValue("image") || null;
+
+  saveOrders();
+
+  try {
+    const channel = await interaction.guild.channels.fetch(ORDER_CHANNEL_ID);
+    const message = await channel.messages.fetch(data.messageId);
+
+    await message.edit({
+      components: [
+        buildOrderContainer(id, data),
+        message.components[1]
+      ],
+      flags: MessageFlags.IsComponentsV2
+    });
+
+  } catch (err) {
+    console.log("Failed to update order message:", err);
+  }
+
+  return interaction.reply({
+    content: "✅ Order updated successfully.",
+    ephemeral: true
+  });
+}
+
+    // ================= CLOSE =================
     if (interaction.isButton() && interaction.customId.startsWith("close_")) {
+
+      await interaction.deferReply({ ephemeral: true });
+
+      const id = interaction.customId.split("_")[1];
 
       await interaction.channel.setParent(CLOSED_CATEGORY_ID);
 
-      return interaction.reply({
-        content: "🔒 Ticket moved to Closed.",
-        ephemeral: true
+      return interaction.editReply({
+        content: "🔒 Ticket moved to Closed."
       });
     }
 
