@@ -1,5 +1,5 @@
 // ======================================================
-// Simple YouTube Music System
+// Advanced Music System (Queue + Controls)
 // ======================================================
 
 const {
@@ -33,59 +33,134 @@ module.exports = (client) => {
     if (command === "!play") {
 
       const query = args.join(" ");
-      if (!query) return message.reply("❌ حط اسم الأغنية أو لينك.");
+      if (!query) return message.reply("❌ اكتب اسم الأغنية أو لينك.");
 
       const voiceChannel = message.member.voice.channel;
       if (!voiceChannel)
         return message.reply("❌ لازم تدخل فويس الأول.");
 
-      const connection = joinVoiceChannel({
-        channelId: voiceChannel.id,
-        guildId: message.guild.id,
-        adapterCreator: message.guild.voiceAdapterCreator
-      });
+      let serverQueue = queues.get(message.guild.id);
 
-      const player = createAudioPlayer();
-      connection.subscribe(player);
+      if (!serverQueue) {
+        serverQueue = {
+          songs: [],
+          player: createAudioPlayer(),
+          connection: null,
+          loop: false
+        };
+        queues.set(message.guild.id, serverQueue);
+      }
 
       let url;
+      let title;
 
       if (play.yt_validate(query) === "video") {
         url = query;
+        const info = await play.video_info(url);
+        title = info.video_details.title;
       } else {
         const results = await play.search(query, { limit: 1 });
         if (!results.length)
           return message.reply("❌ ملقتش حاجة.");
         url = results[0].url;
+        title = results[0].title;
       }
 
-      const stream = await play.stream(url);
-      const resource = createAudioResource(stream.stream, {
-        inputType: stream.type
-      });
+      serverQueue.songs.push({ url, title });
 
-      player.play(resource);
+      if (!serverQueue.connection) {
+        serverQueue.connection = joinVoiceChannel({
+          channelId: voiceChannel.id,
+          guildId: message.guild.id,
+          adapterCreator: message.guild.voiceAdapterCreator
+        });
 
-      player.on(AudioPlayerStatus.Idle, () => {
-        connection.destroy();
-      });
+        serverQueue.connection.subscribe(serverQueue.player);
+        playSong(message.guild.id, message.channel);
+      } else {
+        message.channel.send(`➕ أضيفت للكيو: **${title}**`);
+      }
+    }
 
-      const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
-        .setTitle("🎵 Now Playing")
-        .setDescription(`[اضغط هنا للمشاهدة](${url})`);
-
-      message.channel.send({ embeds: [embed] });
+    // ================= SKIP =================
+    if (command === "!skip") {
+      const serverQueue = queues.get(message.guild.id);
+      if (!serverQueue) return message.reply("❌ مفيش حاجة شغالة.");
+      serverQueue.player.stop();
     }
 
     // ================= STOP =================
     if (command === "!stop") {
-      const connection = getVoiceConnection(message.guild.id);
-      if (!connection) return message.reply("❌ مفيش حاجة شغالة.");
-      connection.destroy();
+      const serverQueue = queues.get(message.guild.id);
+      if (!serverQueue) return message.reply("❌ مفيش حاجة شغالة.");
+
+      serverQueue.songs = [];
+      serverQueue.connection.destroy();
+      queues.delete(message.guild.id);
+
       message.reply("⏹️ تم إيقاف الموسيقى.");
+    }
+
+    // ================= PAUSE =================
+    if (command === "!pause") {
+      const serverQueue = queues.get(message.guild.id);
+      if (!serverQueue) return;
+      serverQueue.player.pause();
+      message.reply("⏸️ تم إيقاف مؤقت.");
+    }
+
+    // ================= RESUME =================
+    if (command === "!resume") {
+      const serverQueue = queues.get(message.guild.id);
+      if (!serverQueue) return;
+      serverQueue.player.unpause();
+      message.reply("▶️ رجعنا نكمل.");
+    }
+
+    // ================= LOOP =================
+    if (command === "!loop") {
+      const serverQueue = queues.get(message.guild.id);
+      if (!serverQueue) return;
+      serverQueue.loop = !serverQueue.loop;
+      message.reply(serverQueue.loop ? "🔁 Loop On" : "➡️ Loop Off");
     }
 
   });
 
 };
+
+// ================= PLAY SONG FUNCTION =================
+async function playSong(guildId, textChannel) {
+
+  const serverQueue = queues.get(guildId);
+  if (!serverQueue || !serverQueue.songs.length) {
+    serverQueue?.connection.destroy();
+    queues.delete(guildId);
+    return;
+  }
+
+  const song = serverQueue.songs[0];
+
+  const stream = await play.stream(song.url);
+  const resource = createAudioResource(stream.stream, {
+    inputType: stream.type
+  });
+
+  serverQueue.player.play(resource);
+
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setTitle("🎵 Now Playing")
+    .setDescription(`**${song.title}**`);
+
+  textChannel.send({ embeds: [embed] });
+
+  serverQueue.player.once(AudioPlayerStatus.Idle, () => {
+
+    if (!serverQueue.loop) {
+      serverQueue.songs.shift();
+    }
+
+    playSong(guildId, textChannel);
+  });
+}
