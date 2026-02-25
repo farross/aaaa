@@ -50,22 +50,24 @@ function buildOrderContainer(id, data) {
     .addSeparatorComponents(sep =>
       sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
     )
-    .addTextDisplayComponents(text =>
-      text.setContent(
+.addTextDisplayComponents(text =>
+  text.setContent(
 `## 📢 NEW ORDER <@&${GAMERS_ROLE_ID}>
 
 ### 📦 Order Details
+
+${data.image ? `![image](${data.image})\n` : ""}
+
 \`\`\`
 ${data.service}
-\`\`\``
-      )
-    );
+\`\`\`
 
-  if (data.image && data.image.startsWith("http")) {
-    container.addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
-    );
-  }
+💰 **Price:** ${data.price}
+🆔 **Order ID:** #${id}
+👤 **Seller:** <@${data.customer}>`
+  )
+)
+
 
   container
     .addSeparatorComponents(sep =>
