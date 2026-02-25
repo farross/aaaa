@@ -14,6 +14,7 @@ const {
   SeparatorSpacingSize,
   MediaGalleryItemBuilder,
   MessageFlags
+  EmbedBuilder
 } = require('discord.js');
 
 const fs = require('fs');
@@ -41,52 +42,49 @@ function saveOrders() {
 }
 
 // ======================= BUILD ORDER UI =======================
-function buildOrderContainer(id, data) {
+function saveOrders() {
+  fs.writeFileSync('./orders.json', JSON.stringify(orderData, null, 2));
+}
 
-  const container = new ContainerBuilder()
-    .setAccentColor(0x2b2d31);
 
-  // Thumbnail الأول
-  if (data.image) {
-    try {
-      const cleanUrl = data.image.split("?")[0];
-      container.setThumbnail({ url: cleanUrl });
-    } catch {}
-  }
+// ======================= BUILD ORDER UI =======================
 
-  // البانر بعده
-  container.addMediaGalleryComponents(media =>
-    media.addItems(
-      new MediaGalleryItemBuilder().setURL(BANNER_URL)
-    )
-  );
+// 🔹 Embed للنص + الصورة يمين
+function buildOrderEmbed(id, data) {
 
-  container
-    .addSeparatorComponents(sep =>
-      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-    )
-    .addTextDisplayComponents(text =>
-      text.setContent(
+  const embed = new EmbedBuilder()
+    .setColor(0x2b2d31)
+    .setDescription(
 `## 📢 NEW ORDER <@&${GAMERS_ROLE_ID}>
 
 ### 📦 Order Details
 \`\`\`
 ${data.service}
-\`\`\``
-      )
-    )
-    .addSeparatorComponents(sep =>
-      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-    )
-    .addTextDisplayComponents(text =>
-      text.setContent(
-`💰 **Price:** ${data.price}
+\`\`\`
+
+💰 **Price:** ${data.price}
 🆔 **Order ID:** #${id}
 👤 **Seller:** <@${data.customer}>`
-      )
     );
 
-  return container;
+  if (data.image) {
+    embed.setThumbnail(data.image.split("?")[0]);
+  }
+
+  return embed;
+}
+
+
+// 🔹 Container للبانر بس
+function buildBannerContainer() {
+
+  return new ContainerBuilder()
+    .setAccentColor(0x2b2d31)
+    .addMediaGalleryComponents(media =>
+      media.addItems(
+        new MediaGalleryItemBuilder().setURL(BANNER_URL)
+      )
+    );
 }
 // ======================================================
 // MODULE EXPORT
@@ -185,7 +183,8 @@ module.exports = (client) => {
       );
 
 const orderMessage = await channel.send({
-  components: [buildOrderContainer(id, orderData.orders[id]), row],
+  embeds: [buildOrderEmbed(id, orderData.orders[id])],
+  components: [buildBannerContainer(), row],
   flags: MessageFlags.IsComponentsV2
 });
 
@@ -247,10 +246,11 @@ saveOrders();
           .setStyle(ButtonStyle.Success)
       );
 
-      await ticket.send({
-        components: [buildOrderContainer(id, data), ticketButtons],
-        flags: MessageFlags.IsComponentsV2
-      });
+await ticket.send({
+  embeds: [buildOrderEmbed(id, data)],
+  components: [buildBannerContainer(), ticketButtons],
+  flags: MessageFlags.IsComponentsV2
+});
 
       return interaction.editReply({ content: `✅ Ticket created: ${ticket}` });
     }
@@ -317,13 +317,11 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_")) {
     const channel = await interaction.guild.channels.fetch(ORDER_CHANNEL_ID);
     const message = await channel.messages.fetch(data.messageId);
 
-    await message.edit({
-      components: [
-        buildOrderContainer(id, data),
-        message.components[1]
-      ],
-      flags: MessageFlags.IsComponentsV2
-    });
+await message.edit({
+  embeds: [buildOrderEmbed(id, data)],
+  components: [buildBannerContainer(), message.components[1]],
+  flags: MessageFlags.IsComponentsV2
+});
 
   } catch (err) {
     console.log("Failed to update order message:", err);
