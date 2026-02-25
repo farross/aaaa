@@ -144,7 +144,7 @@ module.exports = (client) => {
         // التاريخ تحت البانر
         .addTextDisplayComponents(text =>
           text.setContent(
-`🔹 شكرًا لتقييمك | ${egyptTime} بتوقيت القاهرة`
+`🔹 Thanks for Your Feedback | ${egyptTime} `
           )
         );
 
