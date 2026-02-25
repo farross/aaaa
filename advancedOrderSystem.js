@@ -41,16 +41,16 @@ function saveOrders() {
 }
 
 // ======================= BUILD ORDER UI =======================
-const container = new ContainerBuilder()
-  .setAccentColor(0xff0000) // اختياري لون
-  .setThumbnail({
-    url: data.image && data.image.startsWith("http")
-      ? data.image
-      : BANNER_URL
-  })
-  .addMediaGalleryComponents(media =>
-    media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
-  )
+// ======================= BUILD ORDER UI =======================
+function buildOrderContainer(id, data) {
+
+  const container = new ContainerBuilder()
+    .setAccentColor(0xff0000)
+    .addMediaGalleryComponents(media =>
+      media.addItems(
+        new MediaGalleryItemBuilder().setURL(BANNER_URL)
+      )
+    )
     .addSeparatorComponents(sep =>
       sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
     )
@@ -65,10 +65,9 @@ ${data.service}
       )
     );
 
+  // 👇 الصورة الصغيرة فوق يمين
   if (data.image && data.image.startsWith("http")) {
-    container.addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
-    );
+    container.setThumbnail({ url: data.image });
   }
 
   container
@@ -84,6 +83,7 @@ ${data.service}
     );
 
   return container;
+}
 }
 
 // ======================================================
