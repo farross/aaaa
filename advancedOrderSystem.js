@@ -236,8 +236,8 @@ saveOrders();
           .setLabel("🔒 Close")
           .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
-          .setCustomId("open_rating")
-          .setLabel("⭐ Feedback")
+          .setCustomId("open_feedback")
+          .setLabel("Feedback")
           .setStyle(ButtonStyle.Success)
       );
 
