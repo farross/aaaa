@@ -41,6 +41,7 @@ function saveOrders() {
 }
 
 // ======================= BUILD ORDER UI =======================
+// ======================= BUILD ORDER UI =======================
 function buildOrderContainer(id, data) {
 
   const container = new ContainerBuilder()
@@ -61,10 +62,10 @@ ${data.service}
       )
     );
 
+  // 👇 هنا تحط التعديل بتاع thumbnail
   if (data.image && data.image.startsWith("http")) {
-    container.addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
-    );
+    const cleanUrl = data.image.split("?")[0];
+    container.setThumbnail({ url: cleanUrl });
   }
 
   container
