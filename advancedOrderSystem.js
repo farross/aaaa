@@ -174,7 +174,6 @@ module.exports = (client) => {
 
 // 1️⃣ البانر
 await channel.send({
-  content: "‎",
   components: [buildBannerContainer()],
   flags: MessageFlags.IsComponentsV2
 });
@@ -244,14 +243,16 @@ saveOrders();
           .setStyle(ButtonStyle.Success)
       );
 
-await channel.send({
+// بانر داخل التذكرة
+await ticket.send({
   components: [buildBannerContainer()],
   flags: MessageFlags.IsComponentsV2
 });
+
+// الطلب داخل التذكرة
 await ticket.send({
-  content: "‎",
-  components: [buildBannerContainer()],
-  flags: MessageFlags.IsComponentsV2
+  embeds: [buildOrderEmbed(id, data)],
+  components: [ticketButtons]
 });
 
       return interaction.editReply({ content: `✅ Ticket created: ${ticket}` });
