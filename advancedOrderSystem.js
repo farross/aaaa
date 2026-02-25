@@ -10,10 +10,14 @@ const {
   TextInputBuilder,
   TextInputStyle,
   Events,
-  ContainerBuilder,
-  SeparatorSpacingSize,
-  MediaGalleryItemBuilder,
-  MessageFlags
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  Events,
+  EmbedBuilder
 } = require('discord.js');
 
 const fs = require('fs');
@@ -41,45 +45,30 @@ function saveOrders() {
 }
 
 // ======================= BUILD ORDER UI =======================
-function buildOrderContainer(id, data) {
+function buildOrderEmbed(id, data) {
 
-  const container = new ContainerBuilder()
-    .addMediaGalleryComponents(media =>
-      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
-    )
-    .addSeparatorComponents(sep =>
-      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
-    )
-.addTextDisplayComponents(text =>
-  text.setContent(
-`## 📢 NEW ORDER <@&${GAMERS_ROLE_ID}>
+  const embed = new EmbedBuilder()
+    .setColor("#5865F2")
+    .setTitle(`📢 NEW ORDER`)
+    .setDescription(
+`📦 **Order Details**
+\`\`\`
+${data.service}
+\`\`\`
 
-### 📦 Order Details
-
-| تفاصيل الطلب | الصورة |
-|--------------|---------|
-| \`\`\`${data.service}\`\`\` <br> 💰 **Price:** ${data.price} <br> 🆔 **Order ID:** #${id} <br> 👤 **Seller:** <@${data.customer}> | ${data.image ? `![img](${data.image})` : "—"} |
-
-`
-  )
-)
-
-
-  container
-    .addSeparatorComponents(sep =>
-      sep.setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-    )
-    .addTextDisplayComponents(text =>
-      text.setContent(
-`💰 **Price:** ${data.price}
+💰 **Price:** ${data.price}
 🆔 **Order ID:** #${id}
 👤 **Seller:** <@${data.customer}>`
-      )
-    );
+    )
+    .setImage(BANNER_URL)
+    .setTimestamp();
 
-  return container;
+  if (data.image && data.image.startsWith("http")) {
+    embed.setThumbnail(data.image); // 👈 الصورة يمين التفاصيل
+  }
+
+  return embed;
 }
-
 // ======================================================
 // MODULE EXPORT
 // ======================================================
@@ -177,8 +166,8 @@ module.exports = (client) => {
       );
 
 const orderMessage = await channel.send({
-  components: [buildOrderContainer(id, orderData.orders[id]), row],
-  flags: MessageFlags.IsComponentsV2
+embeds: [buildOrderEmbed(id, orderData.orders[id])],
+components: [row]
 });
 
 orderData.orders[id].messageId = orderMessage.id;
@@ -240,8 +229,8 @@ saveOrders();
       );
 
       await ticket.send({
-        components: [buildOrderContainer(id, data), ticketButtons],
-        flags: MessageFlags.IsComponentsV2
+embeds: [buildOrderEmbed(id, data)],
+components: [ticketButtons]
       });
 
       return interaction.editReply({ content: `✅ Ticket created: ${ticket}` });
@@ -310,11 +299,8 @@ if (interaction.isModalSubmit() && interaction.customId.startsWith("edit_")) {
     const message = await channel.messages.fetch(data.messageId);
 
     await message.edit({
-      components: [
-        buildOrderContainer(id, data),
-        message.components[1]
-      ],
-      flags: MessageFlags.IsComponentsV2
+embeds: [buildOrderEmbed(id, data)],
+components: [message.components[0]]
     });
 
   } catch (err) {
