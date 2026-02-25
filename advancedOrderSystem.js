@@ -27,7 +27,7 @@ const ORDER_ROLE_ID = "1474602944602177730";
 const MANAGER_ROLE_ID = "1474602944602177730";
 
 const LOGO_URL = "https://cdn.discordapp.com/attachments/1474602944983990290/1476049474051899462/Vita-Spray-Blueprint.png";
-const BANNER_URL = "https://cdn.discordapp.com/attachments/908838301832720394/1475559359164715292/1.png";
+const BANNER_URL = "https://cdn.discordapp.com/attachments/1474602944983990290/1476075693208240230/New_Boostfiy_order_announcement.png";
 
 // ======================= STORAGE =======================
 
