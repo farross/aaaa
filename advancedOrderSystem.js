@@ -41,7 +41,6 @@ function saveOrders() {
 }
 
 // ======================= BUILD ORDER UI =======================
-// ======================= BUILD ORDER UI =======================
 function buildOrderContainer(id, data) {
 
   const container = new ContainerBuilder()
@@ -63,10 +62,14 @@ ${data.service}
     );
 
   // 👇 هنا تحط التعديل بتاع thumbnail
-  if (data.image && data.image.startsWith("http")) {
+if (data.image) {
+  try {
     const cleanUrl = data.image.split("?")[0];
     container.setThumbnail({ url: cleanUrl });
+  } catch (err) {
+    console.log("Invalid image URL");
   }
+}
 
   container
     .addSeparatorComponents(sep =>
