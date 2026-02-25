@@ -41,15 +41,11 @@ function saveOrders() {
 }
 
 // ======================= BUILD ORDER UI =======================
-// ======================= BUILD ORDER UI =======================
 function buildOrderContainer(id, data) {
 
   const container = new ContainerBuilder()
-    .setAccentColor(0xff0000)
     .addMediaGalleryComponents(media =>
-      media.addItems(
-        new MediaGalleryItemBuilder().setURL(BANNER_URL)
-      )
+      media.addItems(new MediaGalleryItemBuilder().setURL(BANNER_URL))
     )
     .addSeparatorComponents(sep =>
       sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large)
@@ -65,17 +61,11 @@ ${data.service}
       )
     );
 
-  // 👇 الصورة الصغيرة فوق يمين
-if (
-  data.image &&
-  data.image.startsWith("http") &&
-  (data.image.endsWith(".png") ||
-   data.image.endsWith(".jpg") ||
-   data.image.endsWith(".jpeg") ||
-   data.image.endsWith(".webp"))
-) {
-  container.setThumbnail({ url: data.image });
-}
+  if (data.image && data.image.startsWith("http")) {
+    container.addMediaGalleryComponents(media =>
+      media.addItems(new MediaGalleryItemBuilder().setURL(data.image))
+    );
+  }
 
   container
     .addSeparatorComponents(sep =>
