@@ -56,15 +56,11 @@ function buildOrderContainer(id, data) {
 
 ### 📦 Order Details
 
-${data.image ? `![image](${data.image})\n` : ""}
+| تفاصيل الطلب | الصورة |
+|--------------|---------|
+| \`\`\`${data.service}\`\`\` <br> 💰 **Price:** ${data.price} <br> 🆔 **Order ID:** #${id} <br> 👤 **Seller:** <@${data.customer}> | ${data.image ? `![img](${data.image})` : "—"} |
 
-\`\`\`
-${data.service}
-\`\`\`
-
-💰 **Price:** ${data.price}
-🆔 **Order ID:** #${id}
-👤 **Seller:** <@${data.customer}>`
+`
   )
 )
 
